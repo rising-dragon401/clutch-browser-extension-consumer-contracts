@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "@source/SoulWalletFactory.sol";
-import "@source/SoulWallet.sol";
+import "@source/ClutchWallet.sol";
 import "@source/keystore/L1/KeyStore.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
 import "./DeployHelper.sol";
@@ -35,16 +35,17 @@ contract CreateWalletEntryPoint is Script {
 
     address defaultCallbackHandler;
 
-    SoulWalletFactory soulwalletFactory;
+    SoulWalletFactory clutchwalletFactory;
 
-    address payable soulwalletAddress;
+    address payable clutchwalletAddress;
     KeyStore keystoreContract;
 
     OpKnownStateRootWithHistory opKnownStateRootWithHistory;
 
     KeystoreProof keystoreProofContract;
     bytes emptyBytes;
-    EntryPoint public entrypoint = EntryPoint(payable(0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789));
+    EntryPoint public entrypoint =
+        EntryPoint(payable(0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789));
 
     function run() public {
         // wallet signer info
@@ -62,8 +63,13 @@ contract CreateWalletEntryPoint is Script {
         bytes32 salt = bytes32(uint256(1));
         bytes[] memory modules = new bytes[](2);
         // security control module setup
-        securityControlModuleAddress = loadEnvContract("SECURITY_CONTROL_MODULE_ADDRESS");
-        modules[0] = abi.encodePacked(securityControlModuleAddress, abi.encode(uint64(2 days)));
+        securityControlModuleAddress = loadEnvContract(
+            "SECURITY_CONTROL_MODULE_ADDRESS"
+        );
+        modules[0] = abi.encodePacked(
+            securityControlModuleAddress,
+            abi.encode(uint64(2 days))
+        );
         // keystore module setup
         keystoreModuleAddress = loadEnvContract("KEYSTORE_MODULE_ADDRESS");
         address[] memory guardians = new address[](1);
@@ -71,21 +77,45 @@ contract CreateWalletEntryPoint is Script {
         bytes memory rawGuardian = abi.encode(guardians, guardianThreshold, 0);
         bytes32 initialGuardianHash = keccak256(rawGuardian);
 
-        bytes memory keystoreModuleInitData =
-            abi.encode(bytes32(uint256(uint160(walletSigner))), initialGuardianHash, initialGuardianSafePeriod);
-        modules[1] = abi.encodePacked(keystoreModuleAddress, keystoreModuleInitData);
+        bytes memory keystoreModuleInitData = abi.encode(
+            bytes32(uint256(uint160(walletSigner))),
+            initialGuardianHash,
+            initialGuardianSafePeriod
+        );
+        modules[1] = abi.encodePacked(
+            keystoreModuleAddress,
+            keystoreModuleInitData
+        );
 
         bytes[] memory plugins = new bytes[](0);
 
-        defaultCallbackHandler = loadEnvContract("DEFAULT_CALLBACK_HANDLER_ADDRESS");
-        bytes memory initializer = abi.encodeWithSignature(
-            "initialize(address,address,bytes[],bytes[])", walletSigner, defaultCallbackHandler, modules, plugins
+        defaultCallbackHandler = loadEnvContract(
+            "DEFAULT_CALLBACK_HANDLER_ADDRESS"
         );
-        soulwalletFactory = SoulWalletFactory(loadEnvContract("SOULWALLET_FACTORY_ADDRESS"));
-        address cacluatedAddress = soulwalletFactory.getWalletAddress(initializer, salt);
+        bytes memory initializer = abi.encodeWithSignature(
+            "initialize(address,address,bytes[],bytes[])",
+            walletSigner,
+            defaultCallbackHandler,
+            modules,
+            plugins
+        );
+        clutchwalletFactory = SoulWalletFactory(
+            loadEnvContract("SOULWALLET_FACTORY_ADDRESS")
+        );
+        address cacluatedAddress = clutchwalletFactory.getWalletAddress(
+            initializer,
+            salt
+        );
 
-        bytes memory soulWalletFactoryCall = abi.encodeWithSignature("createWallet(bytes,bytes32)", initializer, salt);
-        bytes memory initCode = abi.encodePacked(address(soulwalletFactory), soulWalletFactoryCall);
+        bytes memory clutchWalletFactoryCall = abi.encodeWithSignature(
+            "createWallet(bytes,bytes32)",
+            initializer,
+            salt
+        );
+        bytes memory initCode = abi.encodePacked(
+            address(clutchwalletFactory),
+            clutchWalletFactoryCall
+        );
         console.log("cacluatedAddress", cacluatedAddress);
 
         entrypoint.depositTo{value: 1 ether}(cacluatedAddress);
@@ -104,7 +134,11 @@ contract CreateWalletEntryPoint is Script {
             paymasterAndData: hex"",
             signature: hex""
         });
-        userOperation.signature = signUserOp(userOperation, walletSigner, walletSingerPrivateKey);
+        userOperation.signature = signUserOp(
+            userOperation,
+            walletSigner,
+            walletSingerPrivateKey
+        );
         logUserOp(userOperation);
 
         ops[0] = userOperation;
@@ -126,22 +160,33 @@ contract CreateWalletEntryPoint is Script {
         console.logBytes(op.signature);
     }
 
-    function signUserOp(UserOperation memory op, address addr, uint256 key)
-        public
-        view
-        returns (bytes memory signature)
-    {
+    function signUserOp(
+        UserOperation memory op,
+        address addr,
+        uint256 key
+    ) public view returns (bytes memory signature) {
         bytes32 hash = entrypoint.getUserOpHash(op);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, hash.toEthSignedMessageHash());
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            key,
+            hash.toEthSignedMessageHash()
+        );
         require(addr == ECDSA.recover(hash.toEthSignedMessageHash(), v, r, s));
         signature = abi.encodePacked(r, s, v);
-        require(addr == ECDSA.recover(hash.toEthSignedMessageHash(), signature));
+        require(
+            addr == ECDSA.recover(hash.toEthSignedMessageHash(), signature)
+        );
     }
 
     function loadEnvContract(string memory label) private returns (address) {
         address contractAddress = vm.envAddress(label);
-        require(contractAddress != address(0), string(abi.encodePacked(label, " not provided")));
-        require(contractAddress.code.length > 0, string(abi.encodePacked(label, " needs be deployed")));
+        require(
+            contractAddress != address(0),
+            string(abi.encodePacked(label, " not provided"))
+        );
+        require(
+            contractAddress.code.length > 0,
+            string(abi.encodePacked(label, " needs be deployed"))
+        );
         return contractAddress;
     }
 }

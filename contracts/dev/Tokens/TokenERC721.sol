@@ -7,7 +7,7 @@ contract TokenERC721 is ERC721 {
     constructor() ERC721("MyToken", "MTK") {}
 
     function _baseURI() internal pure override returns (string memory) {
-        return "http://soulwallet";
+        return "http://clutchwallet";
     }
 
     function safeMint(address to, uint256 tokenId) external {

@@ -11,7 +11,7 @@ import "@source/paymaster/ERC20Paymaster.sol";
 contract PaymasterDeployer is Script, DeployHelper {
     address paymasterOwner;
     uint256 paymasterOwnerPrivateKey;
-    address soulwalletFactory;
+    address clutchwalletFactory;
 
     function run() public {
         paymasterOwnerPrivateKey = vm.envUint("PAYMASTER_OWNER_PRIVATE_KEY");
@@ -24,14 +24,14 @@ contract PaymasterDeployer is Script, DeployHelper {
             paymasterOwner != address(0),
             "PAYMASTER_OWNER_ADDRESS not provided"
         );
-        soulwalletFactory = vm.envAddress("SOULWALLET_FACTORY_ADDRESS");
+        clutchwalletFactory = vm.envAddress("SOULWALLET_FACTORY_ADDRESS");
         require(
-            soulwalletFactory != address(0),
+            clutchwalletFactory != address(0),
             "SOULWALLET_FACTORY_ADDRESS not provided"
         );
         require(
-            address(soulwalletFactory).code.length > 0,
-            "soulwalletFactory needs be deployed"
+            address(clutchwalletFactory).code.length > 0,
+            "clutchwalletFactory needs be deployed"
         );
         vm.startBroadcast(privateKey);
 
@@ -90,7 +90,7 @@ contract PaymasterDeployer is Script, DeployHelper {
                 abi.encode(
                     ENTRYPOINT_ADDRESS,
                     paymasterOwner,
-                    soulwalletFactory
+                    clutchwalletFactory
                 )
             )
         );

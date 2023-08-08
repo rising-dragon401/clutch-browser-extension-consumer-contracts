@@ -17,15 +17,18 @@ contract ExecutionManagerTest is Test {
     using ECDSA for bytes32;
 
     EntryPoint public entryPoint;
-    SoulWalletLogicInstence public soulWalletLogicInstence;
-    SoulWalletFactory public soulWalletFactory;
+    SoulWalletLogicInstence public clutchWalletLogicInstence;
+    SoulWalletFactory public clutchWalletFactory;
     Bundler public bundler;
 
     function setUp() public {
         entryPoint = new EntryPoint();
-        soulWalletLogicInstence = new SoulWalletLogicInstence(entryPoint);
-        soulWalletFactory =
-        new SoulWalletFactory(address(soulWalletLogicInstence.soulWalletLogic()), address(entryPoint), address(this));
+        clutchWalletLogicInstence = new SoulWalletLogicInstence(entryPoint);
+        clutchWalletFactory = new SoulWalletFactory(
+            address(clutchWalletLogicInstence.clutchWalletLogic()),
+            address(entryPoint),
+            address(this)
+        );
 
         bundler = new Bundler();
     }
@@ -43,7 +46,9 @@ contract ExecutionManagerTest is Test {
         bytes memory paymasterAndData;
         bytes memory signature;
 
-        (address walletOwner, uint256 walletOwnerPrivateKey) = makeAddrAndKey("walletOwner");
+        (address walletOwner, uint256 walletOwnerPrivateKey) = makeAddrAndKey(
+            "walletOwner"
+        );
         {
             nonce = 0;
             bytes[] memory modules = new bytes[](0);
@@ -51,16 +56,26 @@ contract ExecutionManagerTest is Test {
             bytes32 salt = bytes32(0);
             DefaultCallbackHandler defaultCallbackHandler = new DefaultCallbackHandler();
             bytes memory initializer = abi.encodeWithSignature(
-                "initialize(address,address,bytes[],bytes[])", walletOwner, defaultCallbackHandler, modules, plugins
+                "initialize(address,address,bytes[],bytes[])",
+                walletOwner,
+                defaultCallbackHandler,
+                modules,
+                plugins
             );
-            sender = soulWalletFactory.getWalletAddress(initializer, salt);
+            sender = clutchWalletFactory.getWalletAddress(initializer, salt);
 
             /*
             function createWallet(bytes memory _initializer, bytes32 _salt)
             */
-            bytes memory soulWalletFactoryCall =
-                abi.encodeWithSignature("createWallet(bytes,bytes32)", initializer, salt);
-            initCode = abi.encodePacked(address(soulWalletFactory), soulWalletFactoryCall);
+            bytes memory clutchWalletFactoryCall = abi.encodeWithSignature(
+                "createWallet(bytes,bytes32)",
+                initializer,
+                salt
+            );
+            initCode = abi.encodePacked(
+                address(clutchWalletFactory),
+                clutchWalletFactoryCall
+            );
 
             verificationGasLimit = 1000000;
             preVerificationGas = 100000;
@@ -83,18 +98,27 @@ contract ExecutionManagerTest is Test {
         );
 
         bytes32 userOpHash = entryPoint.getUserOpHash(userOperation);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(walletOwnerPrivateKey, userOpHash.toEthSignedMessageHash());
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            walletOwnerPrivateKey,
+            userOpHash.toEthSignedMessageHash()
+        );
         userOperation.signature = abi.encodePacked(r, s, v);
-        vm.expectRevert(abi.encodeWithSelector(IEntryPoint.FailedOp.selector, 0, "AA21 didn't pay prefund"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEntryPoint.FailedOp.selector,
+                0,
+                "AA21 didn't pay prefund"
+            )
+        );
         bundler.post(entryPoint, userOperation);
         assertEq(sender.code.length, 0, "A1:sender.code.length != 0");
 
         vm.deal(userOperation.sender, 10 ether);
         bundler.post(entryPoint, userOperation);
         assertEq(sender.code.length > 0, true, "A2:sender.code.length == 0");
-        ISoulWallet soulWallet = ISoulWallet(sender);
-        assertEq(soulWallet.isOwner(walletOwner), true);
-        assertEq(soulWallet.isOwner(address(0x1111)), false);
+        ISoulWallet clutchWallet = ISoulWallet(sender);
+        assertEq(clutchWallet.isOwner(walletOwner), true);
+        assertEq(clutchWallet.isOwner(address(0x1111)), false);
 
         return (sender, walletOwner);
     }
@@ -104,7 +128,7 @@ contract ExecutionManagerTest is Test {
 
         TokenERC721 tokenERC721 = new TokenERC721();
 
-        ISoulWallet soulWallet = ISoulWallet(sender);
+        ISoulWallet clutchWallet = ISoulWallet(sender);
         // function execute(address dest, uint256 value, bytes calldata func) external;
         {
             uint256 snapshotId = vm.snapshot();
@@ -112,37 +136,57 @@ contract ExecutionManagerTest is Test {
                 tokenERC721.safeMint(sender, 1);
                 vm.prank(address(0x111));
                 vm.expectRevert(Errors.CALLER_MUST_BE_ENTRYPOINT.selector);
-                soulWallet.execute(
+                clutchWallet.execute(
                     address(tokenERC721),
                     0,
-                    abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 1)
+                    abi.encodeWithSelector(
+                        tokenERC721.transferFrom.selector,
+                        sender,
+                        address(0x111),
+                        1
+                    )
                 );
 
                 vm.expectRevert(Errors.CALLER_MUST_BE_ENTRYPOINT.selector);
                 vm.prank(sender);
-                soulWallet.execute(
+                clutchWallet.execute(
                     address(tokenERC721),
                     0,
-                    abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 1)
+                    abi.encodeWithSelector(
+                        tokenERC721.transferFrom.selector,
+                        sender,
+                        address(0x111),
+                        1
+                    )
                 );
             }
             {
                 tokenERC721.safeMint(sender, 2);
                 vm.prank(walletOwner);
                 vm.expectRevert(Errors.CALLER_MUST_BE_ENTRYPOINT.selector);
-                soulWallet.execute(
+                clutchWallet.execute(
                     address(tokenERC721),
                     0,
-                    abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 2)
+                    abi.encodeWithSelector(
+                        tokenERC721.transferFrom.selector,
+                        sender,
+                        address(0x111),
+                        2
+                    )
                 );
             }
             {
                 tokenERC721.safeMint(sender, 3);
                 vm.prank(address(entryPoint));
-                soulWallet.execute(
+                clutchWallet.execute(
                     address(tokenERC721),
                     0,
-                    abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 3)
+                    abi.encodeWithSelector(
+                        tokenERC721.transferFrom.selector,
+                        sender,
+                        address(0x111),
+                        3
+                    )
                 );
             }
 
@@ -160,22 +204,42 @@ contract ExecutionManagerTest is Test {
                 tokenERC721.safeMint(sender, 4);
                 tokenERC721.safeMint(sender, 5);
 
-                func[0] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 4);
-                func[1] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 5);
+                func[0] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    4
+                );
+                func[1] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    5
+                );
 
                 vm.prank(address(0x111));
                 vm.expectRevert(Errors.CALLER_MUST_BE_ENTRYPOINT.selector);
-                soulWallet.executeBatch(dest, func);
+                clutchWallet.executeBatch(dest, func);
             }
             {
                 tokenERC721.safeMint(sender, 6);
                 tokenERC721.safeMint(sender, 7);
 
-                func[0] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 6);
-                func[1] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 7);
+                func[0] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    6
+                );
+                func[1] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    7
+                );
 
                 vm.prank(address(entryPoint));
-                soulWallet.executeBatch(dest, func);
+                clutchWallet.executeBatch(dest, func);
             }
 
             vm.revertTo(snapshotId);
@@ -198,32 +262,62 @@ contract ExecutionManagerTest is Test {
                 tokenERC721.safeMint(sender, 4);
                 tokenERC721.safeMint(sender, 5);
 
-                func[0] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 4);
-                func[1] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 5);
+                func[0] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    4
+                );
+                func[1] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    5
+                );
 
                 vm.prank(address(0x111));
                 vm.expectRevert(Errors.CALLER_MUST_BE_ENTRYPOINT.selector);
-                soulWallet.executeBatch(dest, value, func);
+                clutchWallet.executeBatch(dest, value, func);
             }
             {
                 tokenERC721.safeMint(sender, 6);
                 tokenERC721.safeMint(sender, 7);
 
-                func[0] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 6);
-                func[1] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 7);
+                func[0] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    6
+                );
+                func[1] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    7
+                );
 
                 vm.prank(address(entryPoint));
-                soulWallet.executeBatch(dest, value, func);
+                clutchWallet.executeBatch(dest, value, func);
             }
             {
                 tokenERC721.safeMint(sender, 8);
                 tokenERC721.safeMint(sender, 9);
 
-                func[0] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 8);
-                func[1] = abi.encodeWithSelector(tokenERC721.transferFrom.selector, sender, address(0x111), 9);
+                func[0] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    8
+                );
+                func[1] = abi.encodeWithSelector(
+                    tokenERC721.transferFrom.selector,
+                    sender,
+                    address(0x111),
+                    9
+                );
 
                 vm.prank(address(entryPoint));
-                soulWallet.executeBatch(dest, value, func);
+                clutchWallet.executeBatch(dest, value, func);
             }
             vm.revertTo(snapshotId);
         }

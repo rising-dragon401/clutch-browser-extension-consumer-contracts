@@ -12,7 +12,7 @@ abstract contract EntryPointAuth {
 
         A: from entryPoint
             # msg.sender:    entryPoint
-            # address(this): soulwalletProxy
+            # address(this): clutchwalletProxy
             ┌────────────┐     ┌────────┐
             │ entryPoint │ ──► │  here  │
             └────────────┘     └────────┘

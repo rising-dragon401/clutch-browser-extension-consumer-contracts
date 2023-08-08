@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 import "@source/SoulWalletFactory.sol";
-import "@source/SoulWallet.sol";
+import "@source/ClutchWallet.sol";
 import "@source/trustedContractManager/trustedModuleManager/TrustedModuleManager.sol";
 import "@source/trustedContractManager/trustedPluginManager/TrustedPluginManager.sol";
 import "@source/modules/SecurityControlModule/SecurityControlModule.sol";

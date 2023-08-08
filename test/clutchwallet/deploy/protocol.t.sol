@@ -16,17 +16,24 @@ contract DeployProtocolTest is Test {
     using ECDSA for bytes32;
 
     EntryPoint public entryPoint;
-    SoulWalletLogicInstence public soulWalletLogicInstence;
-    SoulWalletFactory public soulWalletFactory;
+    SoulWalletLogicInstence public clutchWalletLogicInstence;
+    SoulWalletFactory public clutchWalletFactory;
     Bundler public bundler;
 
     function setUp() public {
         entryPoint = new EntryPoint();
-        soulWalletLogicInstence = new SoulWalletLogicInstence(entryPoint);
-        address logic = address(soulWalletLogicInstence.soulWalletLogic());
+        clutchWalletLogicInstence = new SoulWalletLogicInstence(entryPoint);
+        address logic = address(clutchWalletLogicInstence.clutchWalletLogic());
 
-        soulWalletFactory = new SoulWalletFactory(logic, address(entryPoint), address(this));
-        require(soulWalletFactory.walletImpl() == logic, "logic address not match");
+        clutchWalletFactory = new SoulWalletFactory(
+            logic,
+            address(entryPoint),
+            address(this)
+        );
+        require(
+            clutchWalletFactory.walletImpl() == logic,
+            "logic address not match"
+        );
 
         bundler = new Bundler();
     }
@@ -44,34 +51,57 @@ contract DeployProtocolTest is Test {
         bytes memory paymasterAndData;
         bytes memory signature;
 
-        (address walletOwner, uint256 walletOwnerPrivateKey) = makeAddrAndKey("walletOwner");
+        (address walletOwner, uint256 walletOwnerPrivateKey) = makeAddrAndKey(
+            "walletOwner"
+        );
         {
             nonce = 0;
 
-            (address trustedManagerOwner,) = makeAddrAndKey("trustedManagerOwner");
-            TrustedModuleManager trustedModuleManager = new TrustedModuleManager(trustedManagerOwner);
-            TrustedPluginManager trustedPluginManager = new TrustedPluginManager(trustedManagerOwner);
-            SecurityControlModule securityControlModule =
-                new SecurityControlModule(trustedModuleManager, trustedPluginManager);
+            (address trustedManagerOwner, ) = makeAddrAndKey(
+                "trustedManagerOwner"
+            );
+            TrustedModuleManager trustedModuleManager = new TrustedModuleManager(
+                    trustedManagerOwner
+                );
+            TrustedPluginManager trustedPluginManager = new TrustedPluginManager(
+                    trustedManagerOwner
+                );
+            SecurityControlModule securityControlModule = new SecurityControlModule(
+                    trustedModuleManager,
+                    trustedPluginManager
+                );
 
             bytes[] memory modules = new bytes[](1);
-            modules[0] = abi.encodePacked(securityControlModule, abi.encode(uint64(2 days)));
+            modules[0] = abi.encodePacked(
+                securityControlModule,
+                abi.encode(uint64(2 days))
+            );
             bytes[] memory plugins = new bytes[](0);
 
             bytes32 salt = bytes32(0);
 
             DefaultCallbackHandler defaultCallbackHandler = new DefaultCallbackHandler();
             bytes memory initializer = abi.encodeWithSignature(
-                "initialize(address,address,bytes[],bytes[])", walletOwner, defaultCallbackHandler, modules, plugins
+                "initialize(address,address,bytes[],bytes[])",
+                walletOwner,
+                defaultCallbackHandler,
+                modules,
+                plugins
             );
-            sender = soulWalletFactory.getWalletAddress(initializer, salt);
+            sender = clutchWalletFactory.getWalletAddress(initializer, salt);
 
             /*
             function createWallet(bytes memory _initializer, bytes32 _salt)
             */
-            bytes memory soulWalletFactoryCall =
-                abi.encodeWithSignature("createWallet(bytes,bytes32)", initializer, salt);
-            initCode = abi.encodePacked(address(soulWalletFactory), soulWalletFactoryCall);
+            bytes memory clutchWalletFactoryCall = abi.encodeWithSignature(
+                "createWallet(bytes,bytes32)",
+                initializer,
+                salt
+            );
+            initCode = abi.encodePacked(
+                address(clutchWalletFactory),
+                clutchWalletFactoryCall
+            );
 
             verificationGasLimit = 1000000;
             preVerificationGas = 100000;
@@ -94,17 +124,26 @@ contract DeployProtocolTest is Test {
         );
 
         bytes32 userOpHash = entryPoint.getUserOpHash(userOperation);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(walletOwnerPrivateKey, userOpHash.toEthSignedMessageHash());
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            walletOwnerPrivateKey,
+            userOpHash.toEthSignedMessageHash()
+        );
         userOperation.signature = abi.encodePacked(r, s, v);
-        vm.expectRevert(abi.encodeWithSelector(IEntryPoint.FailedOp.selector, 0, "AA21 didn't pay prefund"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IEntryPoint.FailedOp.selector,
+                0,
+                "AA21 didn't pay prefund"
+            )
+        );
         bundler.post(entryPoint, userOperation);
         assertEq(sender.code.length, 0, "A1:sender.code.length != 0");
 
         vm.deal(userOperation.sender, 10 ether);
         bundler.post(entryPoint, userOperation);
         assertEq(sender.code.length > 0, true, "A2:sender.code.length == 0");
-        ISoulWallet soulWallet = ISoulWallet(sender);
-        assertEq(soulWallet.isOwner(walletOwner), true);
-        assertEq(soulWallet.isOwner(address(0x1111)), false);
+        ISoulWallet clutchWallet = ISoulWallet(sender);
+        assertEq(clutchWallet.isOwner(walletOwner), true);
+        assertEq(clutchWallet.isOwner(address(0x1111)), false);
     }
 }

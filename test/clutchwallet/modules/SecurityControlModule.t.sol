@@ -15,8 +15,8 @@ import "@source/dev/Tokens/TokenERC20.sol";
 contract SecurityControlModuleTest is Test {
     using ECDSA for bytes32;
 
-    SoulWalletInstence public soulWalletInstence;
-    ISoulWallet public soulWallet;
+    SoulWalletInstence public clutchWalletInstence;
+    ISoulWallet public clutchWallet;
     SecurityControlModule public securityControlModule;
     TrustedModuleManager public trustedModuleManager;
     TrustedPluginManager public trustedPluginManager;
@@ -33,30 +33,63 @@ contract SecurityControlModuleTest is Test {
     function setUp() public {
         (walletOwner, walletOwnerPrivateKey) = makeAddrAndKey("owner");
 
-        (trustedManagerOwner,) = makeAddrAndKey("trustedManagerOwner");
+        (trustedManagerOwner, ) = makeAddrAndKey("trustedManagerOwner");
         trustedModuleManager = new TrustedModuleManager(trustedManagerOwner);
         trustedPluginManager = new TrustedPluginManager(trustedManagerOwner);
-        securityControlModule = new SecurityControlModule(trustedModuleManager, trustedPluginManager);
+        securityControlModule = new SecurityControlModule(
+            trustedModuleManager,
+            trustedPluginManager
+        );
         demoPlugin_init = new DemoPlugin();
 
         bytes[] memory modules = new bytes[](1);
         modules[0] = abi.encodePacked(securityControlModule, abi.encode(time));
         bytes[] memory plugins = new bytes[](1);
         bytes memory demoPlugin_init_initData;
-        plugins[0] = abi.encodePacked(address(demoPlugin_init), demoPlugin_init_initData);
+        plugins[0] = abi.encodePacked(
+            address(demoPlugin_init),
+            demoPlugin_init_initData
+        );
         bytes32 salt = bytes32(0);
-        soulWalletInstence = new SoulWalletInstence(address(0), walletOwner,  modules, plugins,  salt);
-        soulWallet = soulWalletInstence.soulWallet();
+        clutchWalletInstence = new SoulWalletInstence(
+            address(0),
+            walletOwner,
+            modules,
+            plugins,
+            salt
+        );
+        clutchWallet = clutchWalletInstence.clutchWallet();
 
-        (address[] memory _modules, bytes4[][] memory _selectors) = soulWallet.listModule();
+        (address[] memory _modules, bytes4[][] memory _selectors) = clutchWallet
+            .listModule();
         assertEq(_modules.length, 1, "module length error");
         assertEq(_selectors.length, 1, "selector length error");
-        assertEq(_modules[0], address(securityControlModule), "module address error");
+        assertEq(
+            _modules[0],
+            address(securityControlModule),
+            "module address error"
+        );
         assertEq(_selectors[0].length, 4);
-        assertEq(_selectors[0][3], bytes4(keccak256("addModule(bytes)")), "addModule selector error");
-        assertEq(_selectors[0][2], bytes4(keccak256("addPlugin(bytes)")), "addPlugin selector error");
-        assertEq(_selectors[0][1], bytes4(keccak256("removeModule(address)")), "removeModule selector error");
-        assertEq(_selectors[0][0], bytes4(keccak256("removePlugin(address)")), "removePlugin selector error");
+        assertEq(
+            _selectors[0][3],
+            bytes4(keccak256("addModule(bytes)")),
+            "addModule selector error"
+        );
+        assertEq(
+            _selectors[0][2],
+            bytes4(keccak256("addPlugin(bytes)")),
+            "addPlugin selector error"
+        );
+        assertEq(
+            _selectors[0][1],
+            bytes4(keccak256("removeModule(address)")),
+            "removeModule selector error"
+        );
+        assertEq(
+            _selectors[0][0],
+            bytes4(keccak256("removePlugin(address)")),
+            "removePlugin selector error"
+        );
 
         demoModule = new DemoModule();
         demoPlugin = new DemoPlugin();
@@ -69,12 +102,14 @@ contract SecurityControlModuleTest is Test {
     //function queue(address _target, bytes calldata _data) external returns (bytes32);
     function addModule_queue() private returns (bytes32) {
         bytes memory initData;
-        return securityControlModule.queue(
-            address(soulWallet),
-            abi.encodeWithSelector(
-                bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(demoModule), initData)
-            )
-        );
+        return
+            securityControlModule.queue(
+                address(clutchWallet),
+                abi.encodeWithSelector(
+                    bytes4(keccak256("addModule(bytes)")),
+                    abi.encodePacked(address(demoModule), initData)
+                )
+            );
     }
 
     //function cancel(bytes32 _txId) external;
@@ -84,16 +119,17 @@ contract SecurityControlModuleTest is Test {
 
     //function cancelAll() external;
     function addModule_cancelAll() private {
-        securityControlModule.cancelAll(address(soulWallet));
+        securityControlModule.cancelAll(address(clutchWallet));
     }
 
     //function execute(address _target, bytes calldata _data) external  ;
     function addModule_execute() private {
         bytes memory initData;
         securityControlModule.execute(
-            address(soulWallet),
+            address(clutchWallet),
             abi.encodeWithSelector(
-                bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(demoModule), initData)
+                bytes4(keccak256("addModule(bytes)")),
+                abi.encodePacked(address(demoModule), initData)
             )
         );
     }
@@ -102,10 +138,14 @@ contract SecurityControlModuleTest is Test {
         {
             vm.startPrank(address(0x1111));
 
-            vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()"))));
+            vm.expectRevert(
+                abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()")))
+            );
             addModule_queue();
 
-            vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()"))));
+            vm.expectRevert(
+                abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()")))
+            );
             addModule_execute();
 
             vm.stopPrank();
@@ -114,23 +154,37 @@ contract SecurityControlModuleTest is Test {
         {
             vm.startPrank(walletOwner);
             bytes32 txId = addModule_queue();
-            vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AlreadyQueuedError(bytes32)")), txId));
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    bytes4(keccak256("AlreadyQueuedError(bytes32)")),
+                    txId
+                )
+            );
             addModule_queue();
             vm.stopPrank();
 
             vm.prank(address(0x1111));
-            vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()"))));
+            vm.expectRevert(
+                abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()")))
+            );
             addModule_cancel(txId);
 
             vm.prank(address(0x1111));
-            vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()"))));
+            vm.expectRevert(
+                abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()")))
+            );
             addModule_cancelAll();
             {
                 vm.startPrank(walletOwner);
                 {
                     uint256 snapshotId = vm.snapshot();
                     addModule_cancel(txId);
-                    vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotQueuedError(bytes32)")), txId));
+                    vm.expectRevert(
+                        abi.encodeWithSelector(
+                            bytes4(keccak256("NotQueuedError(bytes32)")),
+                            txId
+                        )
+                    );
                     addModule_execute();
                     vm.revertTo(snapshotId);
                 }
@@ -138,16 +192,23 @@ contract SecurityControlModuleTest is Test {
                     uint256 snapshotId = vm.snapshot();
                     addModule_cancelAll();
                     bytes memory initData;
-                    SecurityControlModule.WalletConfig memory walletConfig =
-                        securityControlModule.getWalletConfig(address(soulWallet));
+                    SecurityControlModule.WalletConfig
+                        memory walletConfig = securityControlModule
+                            .getWalletConfig(address(clutchWallet));
                     bytes32 _txId = securityControlModule.getTxId(
                         walletConfig.seed,
-                        address(soulWallet),
+                        address(clutchWallet),
                         abi.encodeWithSelector(
-                            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(demoModule), initData)
+                            bytes4(keccak256("addModule(bytes)")),
+                            abi.encodePacked(address(demoModule), initData)
                         )
                     );
-                    vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotQueuedError(bytes32)")), _txId));
+                    vm.expectRevert(
+                        abi.encodeWithSelector(
+                            bytes4(keccak256("NotQueuedError(bytes32)")),
+                            _txId
+                        )
+                    );
                     addModule_execute();
                     vm.revertTo(snapshotId);
                 }
@@ -161,20 +222,26 @@ contract SecurityControlModuleTest is Test {
             vm.warp(block.timestamp + time);
 
             vm.prank(address(0x1111));
-            vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()"))));
+            vm.expectRevert(
+                abi.encodeWithSelector(bytes4(keccak256("NotOwnerError()")))
+            );
             addModule_execute();
 
             vm.prank(walletOwner);
             addModule_execute();
 
-            (address[] memory _modules,) = soulWallet.listModule();
+            (address[] memory _modules, ) = clutchWallet.listModule();
             assertEq(_modules.length, 2, "module length error");
 
             assertEq(_modules[0], address(demoModule), "module address error");
 
-            assertEq(soulWallet.isOwner(address(0x1111)), false);
-            demoModule.addOwner(address(soulWallet), address(0x1111));
-            assertEq(soulWallet.isOwner(address(0x1111)), true, "addOwner error");
+            assertEq(clutchWallet.isOwner(address(0x1111)), false);
+            demoModule.addOwner(address(clutchWallet), address(0x1111));
+            assertEq(
+                clutchWallet.isOwner(address(0x1111)),
+                true,
+                "addOwner error"
+            );
         }
     }
 
@@ -190,20 +257,23 @@ contract SecurityControlModuleTest is Test {
 
         vm.startPrank(walletOwner);
         vm.expectEmit(true, true, true, true); //   (bool checkTopic1, bool checkTopic2, bool checkTopic3, bool checkData).
-        emit initEvent(address(soulWallet));
+        emit initEvent(address(clutchWallet));
         addModule_execute();
         vm.stopPrank();
 
-        assertEq(soulWallet.isOwner(address(0x1111)), false);
-        demoModule.addOwner(address(soulWallet), address(0x1111));
-        assertEq(soulWallet.isOwner(address(0x1111)), true, "addOwner error");
+        assertEq(clutchWallet.isOwner(address(0x1111)), false);
+        demoModule.addOwner(address(clutchWallet), address(0x1111));
+        assertEq(clutchWallet.isOwner(address(0x1111)), true, "addOwner error");
     }
 
     //function queue(address _target, bytes calldata _data) external returns (bytes32);
     function removeModule_queue() private returns (bytes32) {
-        bytes memory _data = abi.encodeWithSelector(bytes4(keccak256("removeModule(address)")), address(demoModule));
+        bytes memory _data = abi.encodeWithSelector(
+            bytes4(keccak256("removeModule(address)")),
+            address(demoModule)
+        );
 
-        return securityControlModule.queue(address(soulWallet), _data);
+        return securityControlModule.queue(address(clutchWallet), _data);
     }
 
     //function cancel(bytes32 _txId) external;
@@ -213,20 +283,24 @@ contract SecurityControlModuleTest is Test {
 
     //function cancelAll() external;
     function removeModule_cancelAll() private {
-        securityControlModule.cancelAll(address(soulWallet));
+        securityControlModule.cancelAll(address(clutchWallet));
     }
 
     //function execute(address _target, bytes calldata _data) external  ;
     function removeModule_execute() private {
         securityControlModule.execute(
-            address(soulWallet), abi.encodeWithSelector(bytes4(keccak256("removeModule(address)")), address(demoModule))
+            address(clutchWallet),
+            abi.encodeWithSelector(
+                bytes4(keccak256("removeModule(address)")),
+                address(demoModule)
+            )
         );
     }
 
     function test_removeModule() public {
         test_addModule();
 
-        assertEq(soulWallet.isOwner(address(0x1111)), true, "addOwner error");
+        assertEq(clutchWallet.isOwner(address(0x1111)), true, "addOwner error");
 
         vm.startPrank(walletOwner);
         removeModule_queue();
@@ -235,16 +309,20 @@ contract SecurityControlModuleTest is Test {
 
         vm.warp(block.timestamp + time);
         vm.expectEmit(true, true, true, true); //   (bool checkTopic1, bool checkTopic2, bool checkTopic3, bool checkData).
-        emit deInitEvent(address(soulWallet));
+        emit deInitEvent(address(clutchWallet));
         removeModule_execute();
 
         vm.expectRevert();
-        demoModule.addOwner(address(soulWallet), address(0x2222));
-        assertEq(soulWallet.isOwner(address(0x2222)), false, "addOwner error");
+        demoModule.addOwner(address(clutchWallet), address(0x2222));
+        assertEq(
+            clutchWallet.isOwner(address(0x2222)),
+            false,
+            "addOwner error"
+        );
 
         vm.stopPrank();
 
-        (address[] memory _modules,) = soulWallet.listModule();
+        (address[] memory _modules, ) = clutchWallet.listModule();
         assertEq(_modules.length, 1, "module length error");
     }
 
@@ -255,21 +333,24 @@ contract SecurityControlModuleTest is Test {
     //function queue(address _target, bytes calldata _data) external returns (bytes32);
     function addPlugin_queue() private returns (bytes32) {
         bytes memory initData;
-        return securityControlModule.queue(
-            address(soulWallet),
-            abi.encodeWithSelector(
-                bytes4(keccak256("addPlugin(bytes)")), abi.encodePacked(address(demoPlugin), initData)
-            )
-        );
+        return
+            securityControlModule.queue(
+                address(clutchWallet),
+                abi.encodeWithSelector(
+                    bytes4(keccak256("addPlugin(bytes)")),
+                    abi.encodePacked(address(demoPlugin), initData)
+                )
+            );
     }
 
     //function execute(address _target, bytes calldata _data) external  ;
     function addPlugin_execute() private {
         bytes memory initData;
         securityControlModule.execute(
-            address(soulWallet),
+            address(clutchWallet),
             abi.encodeWithSelector(
-                bytes4(keccak256("addPlugin(bytes)")), abi.encodePacked(address(demoPlugin), initData)
+                bytes4(keccak256("addPlugin(bytes)")),
+                abi.encodePacked(address(demoPlugin), initData)
             )
         );
     }
@@ -286,7 +367,7 @@ contract SecurityControlModuleTest is Test {
 
         vm.startPrank(walletOwner);
         vm.expectEmit(true, true, true, true); //   (bool checkTopic1, bool checkTopic2, bool checkTopic3, bool checkData).
-        emit PluginInit(address(soulWallet));
+        emit PluginInit(address(clutchWallet));
         addPlugin_execute();
         vm.stopPrank();
     }
@@ -314,7 +395,7 @@ contract SecurityControlModuleTest is Test {
 
     function test_Plugin() public {
         test_addPlugin();
-        address sender = address(soulWallet);
+        address sender = address(clutchWallet);
 
         token.sudoMint(sender, 1000);
 
@@ -335,10 +416,16 @@ contract SecurityControlModuleTest is Test {
             maxPriorityFeePerGas = 10 gwei;
 
             // transfer ERC20
-            bytes memory transferData =
-                abi.encodeWithSelector(bytes4(keccak256("transfer(address,uint256)")), address(0x1111), 100);
+            bytes memory transferData = abi.encodeWithSelector(
+                bytes4(keccak256("transfer(address,uint256)")),
+                address(0x1111),
+                100
+            );
             callData = abi.encodeWithSelector(
-                bytes4(keccak256("execute(address,uint256,bytes)")), address(token), 0, transferData
+                bytes4(keccak256("execute(address,uint256,bytes)")),
+                address(token),
+                0,
+                transferData
             );
             callGasLimit = 1000000;
         }
@@ -357,8 +444,13 @@ contract SecurityControlModuleTest is Test {
             signature
         );
 
-        bytes32 userOpHash = soulWalletInstence.entryPoint().getUserOpHash(userOperation);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(walletOwnerPrivateKey, userOpHash.toEthSignedMessageHash());
+        bytes32 userOpHash = clutchWalletInstence.entryPoint().getUserOpHash(
+            userOperation
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            walletOwnerPrivateKey,
+            userOpHash.toEthSignedMessageHash()
+        );
         userOperation.signature = abi.encodePacked(r, s, v);
 
         vm.deal(userOperation.sender, 10 ether);
@@ -369,7 +461,7 @@ contract SecurityControlModuleTest is Test {
         emit OnPreHook();
         vm.expectEmit(true, true, true, true);
         emit OnPostHook();
-        bundler.post(soulWalletInstence.entryPoint(), userOperation);
+        bundler.post(clutchWalletInstence.entryPoint(), userOperation);
 
         assertEq(token.balanceOf(address(0x1111)), 100, "transfer error");
     }

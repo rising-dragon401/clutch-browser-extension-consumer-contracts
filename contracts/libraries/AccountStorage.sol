@@ -4,7 +4,8 @@ pragma solidity ^0.8.17;
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
 library AccountStorage {
-    bytes32 private constant _ACCOUNT_SLOT = keccak256("soulwallet.contracts.AccountStorage");
+    bytes32 private constant _ACCOUNT_SLOT =
+        keccak256("clutchwallet.contracts.AccountStorage");
 
     struct Layout {
         // ┌───────────────────┐

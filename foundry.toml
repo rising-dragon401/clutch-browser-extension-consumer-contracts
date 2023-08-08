@@ -7,7 +7,7 @@ gas_reports = [
     "EntryPoint",
     "SoulWalletFactory",
     "SoulWalletProxy",
-    "SoulWallet",
+    "ClutchWallet",
     "SecurityControlModule",
     "SocialRecoveryModule",
     "TrustedModuleManager",
@@ -15,7 +15,7 @@ gas_reports = [
     "Dailylimit",
     "Upgrade",
     "ERC20Paymaster",
-    "Simple2FA"
+    "Simple2FA",
 ]
 # gas_reports_ignore = ["dev","test"]
 solc = "0.8.20"

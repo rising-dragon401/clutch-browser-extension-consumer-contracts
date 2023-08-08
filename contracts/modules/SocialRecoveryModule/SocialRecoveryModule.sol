@@ -21,8 +21,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     bytes32 private constant _SOCIAL_RECOVERY_TYPEHASH =
         0x333ef7ecc7b8a82065578df0879cefc36c32344d49afdf1e0370a60babe64feb;
 
-    bytes4 private constant _FUNC_RESET_OWNER = bytes4(keccak256("resetOwner(address)"));
-    bytes4 private constant _FUNC_RESET_OWNERS = bytes4(keccak256("resetOwners(address[])"));
+    bytes4 private constant _FUNC_RESET_OWNER =
+        bytes4(keccak256("resetOwner(address)"));
+    bytes4 private constant _FUNC_RESET_OWNERS =
+        bytes4(keccak256("resetOwners(address[])"));
 
     mapping(address => uint256) walletRecoveryNonce;
     mapping(address => uint256) walletInitSeed;
@@ -36,12 +38,18 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     uint128 private __seed = 0;
 
     modifier authorized(address _wallet) {
-        require(ISoulWallet(_wallet).isAuthorizedModule(address(this)), "unauthorized");
+        require(
+            ISoulWallet(_wallet).isAuthorizedModule(address(this)),
+            "unauthorized"
+        );
         _;
     }
 
     modifier whenRecovery(address _wallet) {
-        require(recoveryEntries[_wallet].executeAfter > 0, "no ongoing recovery");
+        require(
+            recoveryEntries[_wallet].executeAfter > 0,
+            "no ongoing recovery"
+        );
         _;
     }
 
@@ -59,32 +67,45 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     }
 
     function domainSeparator() public view returns (bytes32) {
-        return keccak256(
+        return
+            keccak256(
+                abi.encode(
+                    _DOMAIN_SEPARATOR_TYPEHASH,
+                    keccak256(abi.encodePacked(NAME)),
+                    keccak256(abi.encodePacked(VERSION)),
+                    getChainId(),
+                    this
+                )
+            );
+    }
+
+    function encodeSocialRecoveryData(
+        address _wallet,
+        address[] calldata _newOwners,
+        uint256 _nonce
+    ) public view returns (bytes memory) {
+        bytes32 recoveryHash = keccak256(
             abi.encode(
-                _DOMAIN_SEPARATOR_TYPEHASH,
-                keccak256(abi.encodePacked(NAME)),
-                keccak256(abi.encodePacked(VERSION)),
-                getChainId(),
-                this
+                _SOCIAL_RECOVERY_TYPEHASH,
+                _wallet,
+                keccak256(abi.encodePacked(_newOwners)),
+                _nonce
             )
         );
+        return
+            abi.encodePacked(
+                bytes1(0x19),
+                bytes1(0x01),
+                domainSeparator(),
+                recoveryHash
+            );
     }
 
-    function encodeSocialRecoveryData(address _wallet, address[] calldata _newOwners, uint256 _nonce)
-        public
-        view
-        returns (bytes memory)
-    {
-        bytes32 recoveryHash =
-            keccak256(abi.encode(_SOCIAL_RECOVERY_TYPEHASH, _wallet, keccak256(abi.encodePacked(_newOwners)), _nonce));
-        return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), recoveryHash);
-    }
-
-    function getSocialRecoveryHash(address _wallet, address[] calldata _newOwners, uint256 _nonce)
-        public
-        view
-        returns (bytes32)
-    {
+    function getSocialRecoveryHash(
+        address _wallet,
+        address[] calldata _newOwners,
+        uint256 _nonce
+    ) public view returns (bytes32) {
         return keccak256(encodeSocialRecoveryData(_wallet, _newOwners, _nonce));
     }
 
@@ -98,12 +119,21 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     }
 
     function _init(bytes calldata data) internal override {
-        (address[] memory _guardians, uint256 _threshold, bytes32 _guardianHash) =
-            abi.decode(data, (address[], uint256, bytes32));
+        (
+            address[] memory _guardians,
+            uint256 _threshold,
+            bytes32 _guardianHash
+        ) = abi.decode(data, (address[], uint256, bytes32));
         address _sender = sender();
-        require(_threshold > 0 && _threshold <= _guardians.length, "threshold error");
+        require(
+            _threshold > 0 && _threshold <= _guardians.length,
+            "threshold error"
+        );
         if (_guardians.length > 0) {
-            require(_guardianHash == bytes32(0), "cannot set anonomous guardian with onchain guardian");
+            require(
+                _guardianHash == bytes32(0),
+                "cannot set anonomous guardian with onchain guardian"
+            );
         }
         if (_guardians.length == 0) {
             require(_guardianHash != bytes32(0), "guardian config error");
@@ -126,19 +156,27 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
     function _checkLatestGuardian(address wallet) private {
         if (
-            walletPendingGuardian[wallet].pendingUntil > 0
-                && walletPendingGuardian[wallet].pendingUntil > block.timestamp
+            walletPendingGuardian[wallet].pendingUntil > 0 &&
+            walletPendingGuardian[wallet].pendingUntil > block.timestamp
         ) {
             if (walletPendingGuardian[wallet].guardianHash != bytes32(0)) {
                 // if set anonomous guardian, clear onchain guardian
                 walletGuardian[wallet].guardians.clear();
-                walletGuardian[wallet].guardianHash = walletPendingGuardian[wallet].guardianHash;
+                walletGuardian[wallet].guardianHash = walletPendingGuardian[
+                    wallet
+                ].guardianHash;
             } else if (walletPendingGuardian[wallet].guardians.length > 0) {
                 //if set onchain guardian, clear anonomous guardian
                 walletGuardian[wallet].guardianHash = bytes32(0);
                 walletGuardian[wallet].guardians.clear();
-                for (uint256 i = 0; i < walletPendingGuardian[wallet].guardians.length; i++) {
-                    walletGuardian[wallet].guardians.add(walletPendingGuardian[wallet].guardians[i]);
+                for (
+                    uint256 i = 0;
+                    i < walletPendingGuardian[wallet].guardians.length;
+                    i++
+                ) {
+                    walletGuardian[wallet].guardians.add(
+                        walletPendingGuardian[wallet].guardians[i]
+                    );
                 }
             }
 
@@ -155,11 +193,21 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return walletGuardian[wallet].guardians.size();
     }
 
-    function getGuardians(address wallet) public view returns (address[] memory) {
-        return walletGuardian[wallet].guardians.list(AddressLinkedList.SENTINEL_ADDRESS, type(uint8).max);
+    function getGuardians(
+        address wallet
+    ) public view returns (address[] memory) {
+        return
+            walletGuardian[wallet].guardians.list(
+                AddressLinkedList.SENTINEL_ADDRESS,
+                type(uint8).max
+            );
     }
 
-    function updateGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
+    function updateGuardians(
+        address[] calldata _guardians,
+        uint256 _threshold,
+        bytes32 _guardianHash
+    )
         external
         authorized(sender())
         whenNotRecovery(sender())
@@ -167,12 +215,18 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     {
         address wallet = sender();
         if (_guardians.length > 0) {
-            require(_guardianHash == bytes32(0), "cannot set anonomous guardian with onchain guardian");
+            require(
+                _guardianHash == bytes32(0),
+                "cannot set anonomous guardian with onchain guardian"
+            );
         }
         if (_guardians.length == 0) {
             require(_guardianHash != bytes32(0), "guardian config error");
         }
-        require(_threshold > 0 && _threshold <= _guardians.length, "threshold error");
+        require(
+            _threshold > 0 && _threshold <= _guardians.length,
+            "threshold error"
+        );
         PendingGuardianEntry memory pendingEntry;
         pendingEntry.pendingUntil = block.timestamp + 2 days;
         pendingEntry.guardians = _guardians;
@@ -182,8 +236,13 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     }
 
     // owner or guardian
-    function cancelSetGuardians(address wallet) external authorized(wallet) checkLatestGuardian(wallet) {
-        require(walletPendingGuardian[wallet].pendingUntil > 0, "no pending guardian");
+    function cancelSetGuardians(
+        address wallet
+    ) external authorized(wallet) checkLatestGuardian(wallet) {
+        require(
+            walletPendingGuardian[wallet].pendingUntil > 0,
+            "no pending guardian"
+        );
         if (wallet != sender()) {
             if (!isGuardian(wallet, sender())) {
                 revert("not authorized");
@@ -192,11 +251,11 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete walletPendingGuardian[wallet];
     }
 
-    function revealAnomousGuardians(address wallet, address[] calldata guardians, uint256 salt)
-        public
-        authorized(wallet)
-        checkLatestGuardian(wallet)
-    {
+    function revealAnomousGuardians(
+        address wallet,
+        address[] calldata guardians,
+        uint256 salt
+    ) public authorized(wallet) checkLatestGuardian(wallet) {
         if (wallet != sender()) {
             if (!isGuardian(wallet, sender())) {
                 revert("not authorized");
@@ -223,7 +282,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         emit AnonymousGuardianRevealed(wallet, guardians, guardianHash);
     }
 
-    function getAnomousGuardianHash(address[] calldata guardians, uint256 salt) public pure returns (bytes32) {
+    function getAnomousGuardianHash(
+        address[] calldata guardians,
+        uint256 salt
+    ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(guardians, salt));
     }
 
@@ -237,7 +299,11 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         require(_newOwners.length > 0, "owners cannot be empty");
         uint256 _nonce = nonce(_wallet);
         // get recoverHash = hash(recoveryRecord) with EIP712
-        bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
+        bytes32 recoveryHash = getSocialRecoveryHash(
+            _wallet,
+            _newOwners,
+            _nonce
+        );
         // verify signatures, verify is guardian
         checkNSignatures(_wallet, recoveryHash, signatureCount, signatures);
         // if (numConfirmed == numGuardian) execute Recovery
@@ -250,14 +316,22 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         }
     }
 
-    function executeRecovery(address _wallet) external whenRecovery(_wallet) authorized(_wallet) {
+    function executeRecovery(
+        address _wallet
+    ) external whenRecovery(_wallet) authorized(_wallet) {
         RecoveryEntry memory request = recoveryEntries[_wallet];
         // check RecoveryEntry.executeUntil > block.timestamp
-        require(block.timestamp >= request.executeAfter, "recovery period still pending");
+        require(
+            block.timestamp >= request.executeAfter,
+            "recovery period still pending"
+        );
         _performRecovery(_wallet, request.newOwners);
     }
 
-    function _performRecovery(address _wallet, address[] memory _newOwners) private {
+    function _performRecovery(
+        address _wallet,
+        address[] memory _newOwners
+    ) private {
         // check nonce and update nonce
         require(_newOwners.length > 0, "owners cannot be empty");
         if (recoveryEntries[_wallet].nonce == nonce(_wallet)) {
@@ -266,23 +340,33 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         // delete RecoveryEntry
         delete recoveryEntries[_wallet];
 
-        ISoulWallet soulwallet = ISoulWallet(payable(_wallet));
+        ISoulWallet clutchwallet = ISoulWallet(payable(_wallet));
         // update owners
-        soulwallet.resetOwners(_newOwners);
+        clutchwallet.resetOwners(_newOwners);
         // emit RecoverySuccess
         emit SocialRecovery(_wallet, _newOwners);
     }
 
-    function cancelRecovery(address _wallet) external authorized(_wallet) whenRecovery(_wallet) {
+    function cancelRecovery(
+        address _wallet
+    ) external authorized(_wallet) whenRecovery(_wallet) {
         require(msg.sender == _wallet, "only wallet owner can cancel recovery");
         emit SocialRecoveryCanceled(_wallet, recoveryEntries[_wallet].nonce);
         delete recoveryEntries[_wallet];
     }
 
-    function _pendingRecovery(address _wallet, address[] calldata _newOwners, uint256 _nonce) private {
+    function _pendingRecovery(
+        address _wallet,
+        address[] calldata _newOwners,
+        uint256 _nonce
+    ) private {
         // new pending recovery
         uint256 executeAfter = block.timestamp + 2 days;
-        recoveryEntries[_wallet] = RecoveryEntry(_newOwners, executeAfter, _nonce);
+        recoveryEntries[_wallet] = RecoveryEntry(
+            _newOwners,
+            executeAfter,
+            _nonce
+        );
         walletRecoveryNonce[_wallet]++;
         emit PendingRecovery(_wallet, _newOwners, _nonce, executeAfter);
     }
@@ -291,11 +375,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @notice Make sure to perform a bounds check for @param pos, to avoid out of bounds access on @param signatures
     /// @param pos which signature to read. A prior bounds check of this parameter should be performed, to avoid out of bounds access
     /// @param signatures concatenated rsv signatures
-    function signatureSplit(bytes memory signatures, uint256 pos)
-        internal
-        pure
-        returns (uint8 v, bytes32 r, bytes32 s)
-    {
+    function signatureSplit(
+        bytes memory signatures,
+        uint256 pos
+    ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
         // The signature format is a compact form of:
         //   {bytes32 r}{bytes32 s}{uint8 v}
         // Compact means, uint8 is not padded to 32 bytes.
@@ -317,12 +400,17 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
      * referece from gnosis safe validation
      *
      */
-    function checkNSignatures(address _wallet, bytes32 dataHash, uint256 signatureCount, bytes memory signatures)
-        public
-        view
-    {
+    function checkNSignatures(
+        address _wallet,
+        bytes32 dataHash,
+        uint256 signatureCount,
+        bytes memory signatures
+    ) public view {
         // Check that the provided signature data is not too short
-        require(signatures.length >= signatureCount * 65, "signatures too short");
+        require(
+            signatures.length >= signatureCount * 65,
+            "signatures too short"
+        );
         // There cannot be an owner with address 0.
         address lastOwner = address(0);
         address currentOwner;
@@ -340,10 +428,16 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 // Check that signature data pointer (s) is not pointing inside the static part of the signatures bytes
                 // This check is not completely accurate, since it is possible that more signatures than the threshold are send.
                 // Here we only check that the pointer is not pointing inside the part that is being processed
-                require(uint256(s) >= signatureCount * 65, "contract signatures too short");
+                require(
+                    uint256(s) >= signatureCount * 65,
+                    "contract signatures too short"
+                );
 
                 // Check that signature data pointer (s) is in bounds (points to the length of data -> 32 bytes)
-                require(uint256(s) + (32) <= signatures.length, "contract signatures out of bounds");
+                require(
+                    uint256(s) + (32) <= signatures.length,
+                    "contract signatures out of bounds"
+                );
 
                 // Check if the contract signature is in bounds: start of data is s + 32 and end is start + signature length
                 uint256 contractSignatureLen;
@@ -351,7 +445,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 assembly {
                     contractSignatureLen := mload(add(add(signatures, s), 0x20))
                 }
-                require(uint256(s) + 32 + contractSignatureLen <= signatures.length, "contract signature wrong offset");
+                require(
+                    uint256(s) + 32 + contractSignatureLen <= signatures.length,
+                    "contract signature wrong offset"
+                );
 
                 // Check signature
                 bytes memory contractSignature;
@@ -361,11 +458,17 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                     contractSignature := add(add(signatures, s), 0x20)
                 }
                 (bool success, bytes memory result) = currentOwner.staticcall(
-                    abi.encodeWithSelector(IERC1271.isValidSignature.selector, dataHash, contractSignature)
+                    abi.encodeWithSelector(
+                        IERC1271.isValidSignature.selector,
+                        dataHash,
+                        contractSignature
+                    )
                 );
                 require(
-                    success && result.length == 32
-                        && abi.decode(result, (bytes32)) == bytes32(IERC1271.isValidSignature.selector),
+                    success &&
+                        result.length == 32 &&
+                        abi.decode(result, (bytes32)) ==
+                        bytes32(IERC1271.isValidSignature.selector),
                     "contract signature invalid"
                 );
             } else if (v == 1) {
@@ -374,30 +477,44 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 currentOwner = address(uint160(uint256(r)));
                 // Hashes are automatically approved by the sender of the message or when they have been pre-approved via a separate transaction
                 require(
-                    msg.sender == currentOwner || approvedRecords[currentOwner][dataHash] != 0,
+                    msg.sender == currentOwner ||
+                        approvedRecords[currentOwner][dataHash] != 0,
                     "approve hash verify failed"
                 );
             } else {
                 // eip712 verify
                 currentOwner = ecrecover(dataHash, v, r, s);
             }
-            require(currentOwner > lastOwner && isGuardian(_wallet, currentOwner), "verify failed");
+            require(
+                currentOwner > lastOwner && isGuardian(_wallet, currentOwner),
+                "verify failed"
+            );
             lastOwner = currentOwner;
         }
     }
 
-    function isGuardian(address _wallet, address _guardian) public view returns (bool) {
+    function isGuardian(
+        address _wallet,
+        address _guardian
+    ) public view returns (bool) {
         return walletGuardian[_wallet].guardians.isExist(_guardian);
     }
 
-    function approveRecovery(address _wallet, address[] calldata _newOwners) external authorized(_wallet) {
+    function approveRecovery(
+        address _wallet,
+        address[] calldata _newOwners
+    ) external authorized(_wallet) {
         require(_newOwners.length > 0, "owners cannot be empty");
         if (!isGuardian(_wallet, sender())) {
             revert("not authorized");
         }
         //
         uint256 _nonce = nonce(_wallet);
-        bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
+        bytes32 recoveryHash = getSocialRecoveryHash(
+            _wallet,
+            _newOwners,
+            _nonce
+        );
         approvedRecords[sender()][recoveryHash] = 1;
         emit ApproveRecovery(_wallet, sender(), recoveryHash);
     }
@@ -406,11 +523,18 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return walletRecoveryNonce[_wallet];
     }
 
-    function threshold(address _wallet) public view returns (uint256 _threshold) {
+    function threshold(
+        address _wallet
+    ) public view returns (uint256 _threshold) {
         return walletGuardian[_wallet].threshold;
     }
 
-    function requiredFunctions() external pure override returns (bytes4[] memory) {
+    function requiredFunctions()
+        external
+        pure
+        override
+        returns (bytes4[] memory)
+    {
         bytes4[] memory functions = new bytes4[](2);
         functions[0] = _FUNC_RESET_OWNER;
         functions[1] = _FUNC_RESET_OWNERS;

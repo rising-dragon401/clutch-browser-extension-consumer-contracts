@@ -9,8 +9,8 @@ import "@source/dev/NewImplementation.sol";
 contract UpgradeTest is Test {
     using ECDSA for bytes32;
 
-    SoulWalletInstence public soulWalletInstence;
-    ISoulWallet public soulWallet;
+    SoulWalletInstence public clutchWalletInstence;
+    ISoulWallet public clutchWallet;
     address public walletOwner;
     uint256 public walletOwnerPrivateKey;
     Upgrade public upgradeModule;
@@ -23,34 +23,52 @@ contract UpgradeTest is Test {
 
         bytes[] memory modules = new bytes[](1);
         bytes memory upgradeModule_initData;
-        modules[0] = abi.encodePacked(address(upgradeModule), upgradeModule_initData);
+        modules[0] = abi.encodePacked(
+            address(upgradeModule),
+            upgradeModule_initData
+        );
         bytes[] memory plugins = new bytes[](0);
 
         bytes32 salt = bytes32(0);
-        soulWalletInstence = new SoulWalletInstence(address(0), walletOwner,  modules, plugins,  salt);
-        soulWallet = soulWalletInstence.soulWallet();
+        clutchWalletInstence = new SoulWalletInstence(
+            address(0),
+            walletOwner,
+            modules,
+            plugins,
+            salt
+        );
+        clutchWallet = clutchWalletInstence.clutchWallet();
 
-        (address[] memory _modules, bytes4[][] memory _selectors) = soulWallet.listModule();
+        (address[] memory _modules, bytes4[][] memory _selectors) = clutchWallet
+            .listModule();
         assertEq(_modules.length, 1, "module length error");
         assertEq(_selectors.length, 1, "selector length error");
         assertEq(_modules[0], address(upgradeModule), "module address error");
         assertEq(_selectors[0].length, 1);
-        assertEq(_selectors[0][0], bytes4(keccak256("upgradeTo(address)")), "upgradeTo selector error");
+        assertEq(
+            _selectors[0][0],
+            bytes4(keccak256("upgradeTo(address)")),
+            "upgradeTo selector error"
+        );
     }
 
     function test_upgrade() public {
         bytes32 _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
-        bytes32 _oldImplementation = vm.load(address(soulWallet), _IMPLEMENTATION_SLOT);
+        bytes32 _oldImplementation = vm.load(
+            address(clutchWallet),
+            _IMPLEMENTATION_SLOT
+        );
         address oldImplementation;
         assembly {
             oldImplementation := _oldImplementation
         }
-        upgradeModule.upgrade(address(soulWallet));
+        upgradeModule.upgrade(address(clutchWallet));
 
         // test new implementation
-        (bool success, bytes memory result) =
-            address(soulWallet).staticcall(abi.encodeWithSelector(NewImplementation.hello.selector));
+        (bool success, bytes memory result) = address(clutchWallet).staticcall(
+            abi.encodeWithSelector(NewImplementation.hello.selector)
+        );
         require(success, "call failed");
         assertEq(abi.decode(result, (string)), "hello world");
     }

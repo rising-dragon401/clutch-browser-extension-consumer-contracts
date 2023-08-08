@@ -15,7 +15,7 @@ import "./base/FallbackManager.sol";
 import "./base/UpgradeManager.sol";
 
 // Draft
-contract SoulWallet is
+contract ClutchWallet is
     Initializable,
     ISoulWallet,
     BaseAccount,
@@ -42,13 +42,13 @@ contract SoulWallet is
         _addOwner(anOwner);
         _setFallbackHandler(defalutCallbackHandler);
 
-        for (uint256 i = 0; i < modules.length;) {
+        for (uint256 i = 0; i < modules.length; ) {
             _addModule(modules[i]);
             unchecked {
                 i++;
             }
         }
-        for (uint256 i = 0; i < plugins.length;) {
+        for (uint256 i = 0; i < plugins.length; ) {
             _addPlugin(plugins[i]);
             unchecked {
                 i++;
@@ -56,19 +56,25 @@ contract SoulWallet is
         }
     }
 
-    function entryPoint() public view override(BaseAccount) returns (IEntryPoint) {
+    function entryPoint()
+        public
+        view
+        override(BaseAccount)
+        returns (IEntryPoint)
+    {
         return EntryPointManager._entryPoint();
     }
 
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
-        internal
-        virtual
-        override
-        returns (uint256 validationData)
-    {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal virtual override returns (uint256 validationData) {
         bool sigValid;
         bytes calldata guardHookInputData;
-        (validationData, sigValid, guardHookInputData) = _isValidUserOp(userOpHash, userOp.signature);
+        (validationData, sigValid, guardHookInputData) = _isValidUserOp(
+            userOpHash,
+            userOp.signature
+        );
 
         /* 
           Why using the current "non-gas-optimized" approach instead of using 
@@ -79,12 +85,18 @@ contract SoulWallet is
           By using "semi-valid" signatures off-chain to estimate gas fee (sigValid will always be false), 
           the estimated fee can include a portion of the execution cost of `guardHook`. 
          */
-        bool guardHookResult = guardHook(userOp, userOpHash, guardHookInputData);
+        bool guardHookResult = guardHook(
+            userOp,
+            userOpHash,
+            guardHookInputData
+        );
 
         // equivalence code: `(sigFailed ? 1 : 0) | (uint256(validUntil) << 160) | (uint256(validAfter) << (160 + 48))`
         // validUntil and validAfter is already packed in signatureData.validationData,
         // and aggregator is address(0), so we just need to add sigFailed flag.
-        validationData = validationData | ((sigValid && guardHookResult) ? 0 : SIG_VALIDATION_FAILED);
+        validationData =
+            validationData |
+            ((sigValid && guardHookResult) ? 0 : SIG_VALIDATION_FAILED);
     }
 
     function upgradeTo(address newImplementation) external onlyModule {

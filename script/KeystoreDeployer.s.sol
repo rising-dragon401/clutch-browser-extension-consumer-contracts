@@ -60,7 +60,7 @@ contract KeystoreDeployer is Script, DeployHelper {
             console.log("deploy keystore contract on Anvil");
             AnvilDeploy();
         } else if (network == Network.OptimismGoerli) {
-            console.log("deploy soul wallet contract on OptimismGoerli");
+            console.log("deploy clutch wallet contract on OptimismGoerli");
             opDeploy();
         } else {
             console.log("deploy keystore contract on testnet");

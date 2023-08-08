@@ -8,7 +8,7 @@ import "@source/miscellaneous/ReceivePayment.sol";
 contract ReceivePaymentDeployer is Script, DeployHelper {
     address paymasterOwner;
     uint256 paymasterOwnerPrivateKey;
-    address soulwalletFactory;
+    address clutchwalletFactory;
 
     function run() public {
         vm.startBroadcast(privateKey);
@@ -16,7 +16,15 @@ contract ReceivePaymentDeployer is Script, DeployHelper {
     }
 
     function deploy() private {
-        address receivePaymentOwner = vm.envAddress("RECEIVE_PAYMENT_OWNER_ADDRESS");
-        deploy("ReceivePayment", bytes.concat(type(ReceivePayment).creationCode, abi.encode(receivePaymentOwner)));
+        address receivePaymentOwner = vm.envAddress(
+            "RECEIVE_PAYMENT_OWNER_ADDRESS"
+        );
+        deploy(
+            "ReceivePayment",
+            bytes.concat(
+                type(ReceivePayment).creationCode,
+                abi.encode(receivePaymentOwner)
+            )
+        );
     }
 }
