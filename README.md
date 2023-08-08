@@ -1,100 +1,67 @@
-# Local environment setup
+<div align="center">
+  <h1 align="center">SoulWallet Contracts [draft version]</h1>
+</div>
 
-## 1. Setup Node/NPM environment
-1 open new terminal window
-```
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-```
-This install homebrew
+<div align="center">
+<img src="https://raw.githubusercontent.com/proofofsoulprotocol/soul-wallet-packages/main/src/assets/logo.svg">
+</div>
 
-2 install node/npm, yarn by using ```brew``` 
-```
-brew install node
-brew install yarn
-```
-3 make sure you have node and npm installed by running simple commands to see what version of each ins installed
-```
-node -v
-npm -v
-```
+## Features
++ Support [ERC-4337: Account Abstraction](https://eips.ethereum.org/EIPS/eip-4337)
++ Social Recovery with Anonymous Guardians: Users can specify trusted contacts, or guardians, when creating a wallet. These guardians are anonymous and are only revealed on-chain during a recovery process, providing some level of privacy. The anonymous guardian setup can help prevent vulnerability to social attacks that attempt to gain control of the wallet by targeting the guardians.
++ Upgradability: The smart contract for this wallet can be upgraded in a secure way to add new features or fix vulnerabilities in the future.
++ Stablecoin pay gas: Users can pay transaction gas fees with stablecoins such as USDC, USDT, DAI, etc.
 
-## 2. Install Rust environment
-open terminal and type below command
-```
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+## Repository overview
 
-## 3. Install Hardhat for solidity smart contract dev environment
-npm install -g hardhat
+Below is a brief overview of the repository contracts
 
-## 4. Install Docker for Geth node 
+### SoulWalletFactory
 
-```
-sudo apt update
+"SoulWalletFactory" is a factory contract. It is used to create a new wallet contract. The wallet contract is created using the singleton contract with the CREATE2 opcode, which allows the wallet contract to be created with a deterministic address.
 
-sudo apt install apt-transport-https ca-certificates curl software-properties-common
+### SoulWalletProxy
+"SoulWalletProxy" is a proxy contract that manages the implementation contract address and is responsible for forwarding delegate calls to the implementation contract. Additionally, users' contract wallet data is stored in the proxy contract.
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+### SoulWallet
+"SoulWallet" is the implementation contract. It is responsible for the core logic of the wallet
++ Using diamond storage pattern to store the data. All contract data is stored in specific slots in the contract. This approach has the advantage of making it easier to upgrade the logic contract in the future while avoiding data conflicts in slots compare the default contract storage from slot 0.
++ Guardian management.
+  1. The initial guardian settings take effect immediately. If guardians are updated, there is a time lock, meaning that changes will only take effect after the set time has passed.
+  2. During social recovery, an anonymous guardian multi-signature contract is deployed, and the guardian's signatures are verified. If the signatures are all correct, social recovery is successful, and the signing key of the wallet contract is replaced.
+  3. Execute transactions from the entry point, the wallet contract will first verify the transaction or user operation signature and then execute the call to the target contract.
++ Upgradability: The smart contract for this wallet can be upgraded in a secure way to add new features or fix vulnerabilities in the future. SoulWallet can be upgraded to a new logic contract. The upgrade process also has a time lock, which means that the upgrade can only be successful after the set time has passed.
 
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+| Method                        | Owner  | Guardians| Anyone | Comment                                                                                         |
+| ----------------------------  | ------ | ------   | ------ | ----------------------------------------------------------------------------------------------- |
+| `transferOwner`               | X      | X        |        |  The owner has the ability to replace the signing key, and the guardians (multi-signature contract) can also replace the signing key through social recovery.
+|`setGuardian`     | X      |          |        |  The owner can update the guardians.                                               |
+| `preUpgradeTo`              | X      |          |        |  Let the owner perform a contract upgrade                                             |
+| `upgrade`            |        |          |   X    | Finalizes an ongoing contract upgrade if the set time period has elapsed. The method is public and can be called by anyone. |
 
-sudo apt update
+### AccountStorage
+"AccountStorage" is a library contract that uses the diamond storage pattern to store data in a particular position in the contract storage.
 
-apt-cache policy docker-ce
+### GuardianMultiSigWallet
+"GuardianMultiSigWallet" is a multi-signature contract that is used to verify the signatures of the guardians during social recovery. This multi-sig wallet is only deployed on the fly during social recovery, and guardians are only revealed at that point.
 
-sudo apt install docker-ce
+### TokenPaymaster
+"TokenPaymaster" is a paymaster contract that is used to pay gas fees with stablecoins such as USDC, USDT, DAI, etc.
 
-sudo systemctl status docker
-```
-
-# Run the project
-1.we are going to use bundler, and smart contract repo of soul wallet. And our rust library repo
-
-```
-git clone https://github.com/proofofsoulprotocol/soul-wallet-contract
-
-git clone https://github.com/proofofsoulprotocol/bundler
+## Test
+```shell
+npm run test
 ```
 
-Clone our rust library repo
+```shell
+npm run deploy:optimisticGoerli
 ```
-https://github.com/clutch-wallet/clutch-browser-extension-consumer-lib.git
-```
+## Disclaimer
+This project is provided "as is" with no warranties or guarantees of any kind, express or implied. The developers make no claims about the suitability, reliability, availability, timeliness, security or accuracy of the software or its related documentation. The use of this software is at your own risk.
 
-2. Run Geth
-It will download geth docker image and run docker container
-```
-docker run --rm -ti --name geth -p 8545:8545 ethereum/client-go:v1.10.26 \
-  --miner.gaslimit 12000000 \
-  --http --http.api personal,eth,net,web3,debug \
-  --http.vhosts '*,localhost,host.docker.internal' --http.addr "0.0.0.0" \
-  --ignore-legacy-receipts --allow-insecure-unlock --rpc.allow-unprotected-txs \
-  --dev \
-  --verbosity 2 \
-  --nodiscover --maxpeers 0 --mine --miner.threads 1 \
-  --networkid 1337
-```
+The developers will not be liable for any damages or losses, whether direct, indirect, incidental or consequential, arising from the use of or inability to use this software or its related documentation, even if advised of the possibility of such damages.
 
-3. Deploy smart contract for bundler and run bunderl service
-```
-cd bundler
-yarn hardhat-deploy --network localhost
-yarn run bundler
-```
-
-4. Deploy smart contract for wallet
-
-***You need env infomation to configure the smart conract
-```
-cd soul-wallet-contract
-
-source .env && forge script script/SingletonFactory.s.sol:SingletonFactory --ffi --rpc-url $RPC_URL --broadcast
-
-source .env && forge script script/KeystoreDeployer.s.sol:KeystoreDeployer --ffi --rpc-url $RPC_URL --broadcast
-
-source .env && forge script script/WalletDeployer.s.sol:WalletDeployer --ffi --rpc-url $RPC_URL --broadcast
-
-source .env && forge script script/PaymasterDeployer.s.sol:PaymasterDeployer --ffi --rpc-url $RPC_URL --broadcast
-```
-
-Now you can test rust library code
+## Acknowledgments
+* <a href='https://eips.ethereum.org/EIPS/eip-4337'>ERC-4337: Account Abstraction Using Alt Mempool</a>
+* <a href='https://github.com/eth-infinitism/account-abstraction'>Infinitism account abstraction contract</a>
+* <a href='https://github.com/safe-global/safe-contracts'>Gnosis Safe Contracts</a>
