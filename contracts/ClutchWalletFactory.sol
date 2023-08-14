@@ -5,7 +5,7 @@ pragma solidity ^0.8.17;
 /* solhint-disable no-inline-assembly */
 /* solhint-disable reason-string */
 
-import "./SoulWalletProxy.sol";
+import "./ClutchWalletProxy.sol";
 import "./ClutchWallet.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
@@ -18,12 +18,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice  .
  */
 
-contract SoulWalletFactory is Ownable {
+contract ClutchWalletFactory is Ownable {
     uint256 private immutable _WALLETIMPL;
     IEntryPoint public immutable entryPoint;
     string public constant VERSION = "0.0.1";
 
-    event SoulWalletCreation(address proxy);
+    event ClutchWalletCreation(address proxy);
 
     constructor(address _walletImpl, address _entryPoint, address _owner) {
         require(_walletImpl != address(0));
@@ -52,7 +52,7 @@ contract SoulWalletFactory is Ownable {
         bytes32 _salt
     ) external returns (address proxy) {
         bytes memory deploymentData = abi.encodePacked(
-            type(SoulWalletProxy).creationCode,
+            type(ClutchWalletProxy).creationCode,
             _WALLETIMPL
         );
         bytes32 salt = _calcSalt(_initializer, _salt);
@@ -81,7 +81,7 @@ contract SoulWalletFactory is Ownable {
                 revert(0, 0)
             }
         }
-        emit SoulWalletCreation(proxy);
+        emit ClutchWalletCreation(proxy);
         return proxy;
     }
 
@@ -100,7 +100,7 @@ contract SoulWalletFactory is Ownable {
      * @return  bytes  .
      */
     function _proxyCode() private pure returns (bytes memory) {
-        return type(SoulWalletProxy).creationCode;
+        return type(ClutchWalletProxy).creationCode;
     }
 
     /**
@@ -111,7 +111,7 @@ contract SoulWalletFactory is Ownable {
         bytes32 _salt
     ) external view returns (address proxy) {
         bytes memory deploymentData = abi.encodePacked(
-            type(SoulWalletProxy).creationCode,
+            type(ClutchWalletProxy).creationCode,
             _WALLETIMPL
         );
         bytes32 salt = _calcSalt(_initializer, _salt);

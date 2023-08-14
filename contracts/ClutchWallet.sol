@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
-import "./interfaces/ISoulWallet.sol";
+import "./interfaces/IClutchWallet.sol";
 import "./base/EntryPointManager.sol";
 import "./base/ExecutionManager.sol";
 import "./base/PluginManager.sol";
@@ -17,7 +17,7 @@ import "./base/UpgradeManager.sol";
 // Draft
 contract ClutchWallet is
     Initializable,
-    ISoulWallet,
+    IClutchWallet,
     BaseAccount,
     EntryPointManager,
     OwnerManager,

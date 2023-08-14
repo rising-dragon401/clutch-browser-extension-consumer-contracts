@@ -9,7 +9,7 @@ import "./IFallbackManager.sol";
 import "@account-abstraction/contracts/interfaces/IAccount.sol";
 import "./IUpgradable.sol";
 
-interface ISoulWallet is
+interface IClutchWallet is
     IAccount,
     IExecutionManager,
     IModuleManager,

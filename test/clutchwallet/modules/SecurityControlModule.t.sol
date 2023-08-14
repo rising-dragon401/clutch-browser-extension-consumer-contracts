@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "../base/SoulWalletInstence.sol";
+import "../base/ClutchWalletInstence.sol";
 import "@source/modules/SecurityControlModule/SecurityControlModule.sol";
 import "@source/trustedContractManager/trustedModuleManager/TrustedModuleManager.sol";
 import "@source/trustedContractManager/trustedPluginManager/TrustedPluginManager.sol";
@@ -15,8 +15,8 @@ import "@source/dev/Tokens/TokenERC20.sol";
 contract SecurityControlModuleTest is Test {
     using ECDSA for bytes32;
 
-    SoulWalletInstence public clutchWalletInstence;
-    ISoulWallet public clutchWallet;
+    ClutchWalletInstence public clutchWalletInstence;
+    IClutchWallet public clutchWallet;
     SecurityControlModule public securityControlModule;
     TrustedModuleManager public trustedModuleManager;
     TrustedPluginManager public trustedPluginManager;
@@ -51,7 +51,7 @@ contract SecurityControlModuleTest is Test {
             demoPlugin_init_initData
         );
         bytes32 salt = bytes32(0);
-        clutchWalletInstence = new SoulWalletInstence(
+        clutchWalletInstence = new ClutchWalletInstence(
             address(0),
             walletOwner,
             modules,

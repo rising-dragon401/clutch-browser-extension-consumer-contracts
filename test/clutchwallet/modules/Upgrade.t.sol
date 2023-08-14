@@ -2,15 +2,15 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "../base/SoulWalletInstence.sol";
+import "../base/ClutchWalletInstence.sol";
 import "@source/modules/Upgrade/Upgrade.sol";
 import "@source/dev/NewImplementation.sol";
 
 contract UpgradeTest is Test {
     using ECDSA for bytes32;
 
-    SoulWalletInstence public clutchWalletInstence;
-    ISoulWallet public clutchWallet;
+    ClutchWalletInstence public clutchWalletInstence;
+    IClutchWallet public clutchWallet;
     address public walletOwner;
     uint256 public walletOwnerPrivateKey;
     Upgrade public upgradeModule;
@@ -30,7 +30,7 @@ contract UpgradeTest is Test {
         bytes[] memory plugins = new bytes[](0);
 
         bytes32 salt = bytes32(0);
-        clutchWalletInstence = new SoulWalletInstence(
+        clutchWalletInstence = new ClutchWalletInstence(
             address(0),
             walletOwner,
             modules,

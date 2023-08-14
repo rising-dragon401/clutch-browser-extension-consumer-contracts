@@ -44,7 +44,7 @@ contract KeyStoreModule is IKeyStoreModule, BaseModule {
         ) {
             revert("keystore already synced");
         }
-        ISoulWallet clutchwallet = ISoulWallet(payable(wallet));
+        IClutchWallet clutchwallet = IClutchWallet(payable(wallet));
         clutchwallet.resetOwner(keystoreSignKey);
         lastKeyStoreSyncSignKey[wallet] = keystoreSignKey;
         emit KeyStoreSyncd(wallet, keystoreSignKey);
@@ -90,7 +90,7 @@ contract KeyStoreModule is IKeyStoreModule, BaseModule {
         );
         // if keystore already sync, change to keystore signer
         if (keystoreSignKey != address(0)) {
-            ISoulWallet clutchwallet = ISoulWallet(payable(_sender));
+            IClutchWallet clutchwallet = IClutchWallet(payable(_sender));
             // sync keystore signing key
             clutchwallet.resetOwner(keystoreSignKey);
             lastKeyStoreSyncSignKey[_sender] = keystoreSignKey;

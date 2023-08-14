@@ -2,8 +2,8 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "./base/SoulWalletLogicInstence.sol";
-import "@source/SoulWalletFactory.sol";
+import "./base/ClutchWalletLogicInstence.sol";
+import "@source/ClutchWalletFactory.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 import "@account-abstraction/contracts/interfaces/UserOperation.sol";
@@ -17,14 +17,14 @@ contract ExecutionManagerTest is Test {
     using ECDSA for bytes32;
 
     EntryPoint public entryPoint;
-    SoulWalletLogicInstence public clutchWalletLogicInstence;
-    SoulWalletFactory public clutchWalletFactory;
+    ClutchWalletLogicInstence public clutchWalletLogicInstence;
+    ClutchWalletFactory public clutchWalletFactory;
     Bundler public bundler;
 
     function setUp() public {
         entryPoint = new EntryPoint();
-        clutchWalletLogicInstence = new SoulWalletLogicInstence(entryPoint);
-        clutchWalletFactory = new SoulWalletFactory(
+        clutchWalletLogicInstence = new ClutchWalletLogicInstence(entryPoint);
+        clutchWalletFactory = new ClutchWalletFactory(
             address(clutchWalletLogicInstence.clutchWalletLogic()),
             address(entryPoint),
             address(this)
@@ -116,7 +116,7 @@ contract ExecutionManagerTest is Test {
         vm.deal(userOperation.sender, 10 ether);
         bundler.post(entryPoint, userOperation);
         assertEq(sender.code.length > 0, true, "A2:sender.code.length == 0");
-        ISoulWallet clutchWallet = ISoulWallet(sender);
+        IClutchWallet clutchWallet = IClutchWallet(sender);
         assertEq(clutchWallet.isOwner(walletOwner), true);
         assertEq(clutchWallet.isOwner(address(0x1111)), false);
 
@@ -128,7 +128,7 @@ contract ExecutionManagerTest is Test {
 
         TokenERC721 tokenERC721 = new TokenERC721();
 
-        ISoulWallet clutchWallet = ISoulWallet(sender);
+        IClutchWallet clutchWallet = IClutchWallet(sender);
         // function execute(address dest, uint256 value, bytes calldata func) external;
         {
             uint256 snapshotId = vm.snapshot();

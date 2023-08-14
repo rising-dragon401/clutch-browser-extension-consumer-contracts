@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "@source/SoulWalletFactory.sol";
+import "@source/ClutchWalletFactory.sol";
 import "@source/ClutchWallet.sol";
 import "@source/keystore/L1/KeyStore.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
@@ -34,7 +34,7 @@ contract CreateWalletDirect is Script {
 
     address defaultCallbackHandler;
 
-    SoulWalletFactory clutchwalletFactory;
+    ClutchWalletFactory clutchwalletFactory;
 
     address payable clutchwalletAddress;
     KeyStore keystoreContract;
@@ -126,8 +126,8 @@ contract CreateWalletDirect is Script {
             modules,
             plugins
         );
-        clutchwalletFactory = SoulWalletFactory(
-            loadEnvContract("SOULWALLET_FACTORY_ADDRESS")
+        clutchwalletFactory = ClutchWalletFactory(
+            loadEnvContract("CLUTCHWALLET_FACTORY_ADDRESS")
         );
         address cacluatedAddress = clutchwalletFactory.getWalletAddress(
             initializer,

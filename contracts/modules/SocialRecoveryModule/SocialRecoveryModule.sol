@@ -5,12 +5,12 @@ import "./ISocialRecoveryModule.sol";
 import "../BaseModule.sol";
 import "../../libraries/AddressLinkedList.sol";
 import "@openzeppelin/contracts/interfaces/IERC1271.sol";
-import "../../interfaces/ISoulWallet.sol";
+import "../../interfaces/IClutchWallet.sol";
 
 contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     using AddressLinkedList for mapping(address => address);
 
-    string public constant NAME = "Soulwallet Social Recovery Module";
+    string public constant NAME = "Clutchwallet Social Recovery Module";
     string public constant VERSION = "0.0.1";
 
     // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
@@ -39,7 +39,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
     modifier authorized(address _wallet) {
         require(
-            ISoulWallet(_wallet).isAuthorizedModule(address(this)),
+            IClutchWallet(_wallet).isAuthorizedModule(address(this)),
             "unauthorized"
         );
         _;
@@ -340,7 +340,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         // delete RecoveryEntry
         delete recoveryEntries[_wallet];
 
-        ISoulWallet clutchwallet = ISoulWallet(payable(_wallet));
+        IClutchWallet clutchwallet = IClutchWallet(payable(_wallet));
         // update owners
         clutchwallet.resetOwners(_newOwners);
         // emit RecoverySuccess

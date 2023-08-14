@@ -2,17 +2,17 @@
 pragma solidity ^0.8.17;
 
 import "@source/ClutchWallet.sol";
-import "@source/SoulWalletFactory.sol";
-import "./SoulWalletLogicInstence.sol";
+import "@source/ClutchWalletFactory.sol";
+import "./ClutchWalletLogicInstence.sol";
 import "@source/dev/SingletonFactory.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
 import "forge-std/Test.sol";
 
-contract SoulWalletInstence {
-    SoulWalletLogicInstence public clutchWalletLogicInstence;
-    SoulWalletFactory public clutchWalletFactory;
+contract ClutchWalletInstence {
+    ClutchWalletLogicInstence public clutchWalletLogicInstence;
+    ClutchWalletFactory public clutchWalletFactory;
     SingletonFactory public singletonFactory;
-    ISoulWallet public clutchWallet;
+    IClutchWallet public clutchWallet;
     EntryPoint public entryPoint;
 
     constructor(
@@ -24,8 +24,8 @@ contract SoulWalletInstence {
     ) {
         entryPoint = new EntryPoint();
         singletonFactory = new SingletonFactory();
-        clutchWalletLogicInstence = new SoulWalletLogicInstence(entryPoint);
-        clutchWalletFactory = new SoulWalletFactory(
+        clutchWalletLogicInstence = new ClutchWalletLogicInstence(entryPoint);
+        clutchWalletFactory = new ClutchWalletFactory(
             address(clutchWalletLogicInstence.clutchWalletLogic()),
             address(entryPoint),
             address(this)
@@ -58,6 +58,6 @@ contract SoulWalletInstence {
         );
         require(walletAddress2.code.length > 0, "wallet code is empty");
         // walletAddress1 as ClutchWallet
-        clutchWallet = ISoulWallet(walletAddress1);
+        clutchWallet = IClutchWallet(walletAddress1);
     }
 }

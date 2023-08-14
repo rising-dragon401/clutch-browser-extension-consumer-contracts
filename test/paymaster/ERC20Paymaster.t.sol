@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "../clutchwallet/base/SoulWalletInstence.sol";
+import "../clutchwallet/base/ClutchWalletInstence.sol";
 import "../clutchwallet/Bundler.sol";
 import "@source/handler/DefaultCallbackHandler.sol";
 import "@source/dev/Tokens/TokenERC721.sol";
@@ -17,8 +17,8 @@ import "../libraries/BytesLib.t.sol";
 
 contract ERC20PaymasterTest is Test {
     EntryPoint entryPoint;
-    SoulWalletInstence clutchWalletInstence;
-    ISoulWallet clutchWallet;
+    ClutchWalletInstence clutchWalletInstence;
+    IClutchWallet clutchWallet;
     ERC20Paymaster paymaster;
     Bundler bundler;
 
@@ -44,7 +44,7 @@ contract ERC20PaymasterTest is Test {
         bytes[] memory plugins = new bytes[](0);
         bytes32 salt = bytes32(0);
         DefaultCallbackHandler defaultCallbackHandler = new DefaultCallbackHandler();
-        clutchWalletInstence = new SoulWalletInstence(
+        clutchWalletInstence = new ClutchWalletInstence(
             address(defaultCallbackHandler),
             ownerAddr,
             modules,
@@ -138,7 +138,7 @@ contract ERC20PaymasterTest is Test {
     }
 
     function fillUserOp(
-        ISoulWallet _sender,
+        IClutchWallet _sender,
         uint256 _key,
         address _to,
         uint256 _value,

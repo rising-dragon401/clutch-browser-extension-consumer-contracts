@@ -24,10 +24,10 @@ contract PaymasterDeployer is Script, DeployHelper {
             paymasterOwner != address(0),
             "PAYMASTER_OWNER_ADDRESS not provided"
         );
-        clutchwalletFactory = vm.envAddress("SOULWALLET_FACTORY_ADDRESS");
+        clutchwalletFactory = vm.envAddress("CLUTCHWALLET_FACTORY_ADDRESS");
         require(
             clutchwalletFactory != address(0),
-            "SOULWALLET_FACTORY_ADDRESS not provided"
+            "CLUTCHWALLET_FACTORY_ADDRESS not provided"
         );
         require(
             address(clutchwalletFactory).code.length > 0,

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "../base/SoulWalletInstence.sol";
+import "../base/ClutchWalletInstence.sol";
 import "@source/dev/Tokens/TokenERC20.sol";
 
 contract DeployDirectTest is Test {
@@ -12,14 +12,14 @@ contract DeployDirectTest is Test {
         bytes[] memory modules = new bytes[](0);
         bytes[] memory plugins = new bytes[](0);
         bytes32 salt = bytes32(0);
-        SoulWalletInstence clutchWalletInstence = new SoulWalletInstence(
+        ClutchWalletInstence clutchWalletInstence = new ClutchWalletInstence(
             address(0),
             address(this),
             modules,
             plugins,
             salt
         );
-        ISoulWallet clutchWallet = clutchWalletInstence.clutchWallet();
+        IClutchWallet clutchWallet = clutchWalletInstence.clutchWallet();
         assertEq(clutchWallet.isOwner(address(this)), true);
         assertEq(clutchWallet.isOwner(address(0x1111)), false);
 

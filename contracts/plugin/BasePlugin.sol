@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "../interfaces/IPlugin.sol";
-import "../interfaces/ISoulWallet.sol";
+import "../interfaces/IClutchWallet.sol";
 import "../interfaces/IPluginManager.sol";
 
 abstract contract BasePlugin is IPlugin {
@@ -27,7 +27,9 @@ abstract contract BasePlugin is IPlugin {
         wallet = _sender();
     }
 
-    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external pure override returns (bool) {
         return interfaceId == type(IPlugin).interfaceId;
     }
 
@@ -36,7 +38,7 @@ abstract contract BasePlugin is IPlugin {
     function walletInit(bytes calldata data) external override {
         address wallet = _wallet();
         if (!inited(wallet)) {
-            if (!ISoulWallet(wallet).isAuthorizedPlugin(address(this))) {
+            if (!IClutchWallet(wallet).isAuthorizedPlugin(address(this))) {
                 revert("not authorized plugin");
             }
             _init(data);
@@ -47,7 +49,7 @@ abstract contract BasePlugin is IPlugin {
     function walletDeInit() external override {
         address wallet = _wallet();
         if (inited(wallet)) {
-            if (ISoulWallet(wallet).isAuthorizedPlugin(address(this))) {
+            if (IClutchWallet(wallet).isAuthorizedPlugin(address(this))) {
                 revert("authorized plugin");
             }
             _deInit();

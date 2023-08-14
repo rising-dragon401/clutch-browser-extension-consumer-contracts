@@ -7,7 +7,10 @@ import "../../trustedContractManager/ITrustedContractManager.sol";
 
 // refer to: https://solidity-by-example.org/app/time-lock/
 
-abstract contract BaseSecurityControlModule is IBaseSecurityControlModule, BaseModule {
+abstract contract BaseSecurityControlModule is
+    IBaseSecurityControlModule,
+    BaseModule
+{
     uint256 public constant MIN_DELAY = 1 days;
     uint256 public constant MAX_DELAY = 14 days;
 
@@ -22,7 +25,7 @@ abstract contract BaseSecurityControlModule is IBaseSecurityControlModule, BaseM
 
     function _authorized(address _target) private view {
         address _sender = sender();
-        if (_sender != _target && !ISoulWallet(_target).isOwner(_sender)) {
+        if (_sender != _target && !IClutchWallet(_target).isOwner(_sender)) {
             revert NotOwnerError();
         }
         if (walletConfigs[_target].seed == 0) {
@@ -46,19 +49,35 @@ abstract contract BaseSecurityControlModule is IBaseSecurityControlModule, BaseM
         walletConfigs[_target] = WalletConfig(0, 0);
     }
 
-    function _getTxId(uint128 _seed, address _target, bytes calldata _data) private view returns (bytes32) {
-        return keccak256(abi.encode(block.chainid, address(this), _seed, _target, _data));
+    function _getTxId(
+        uint128 _seed,
+        address _target,
+        bytes calldata _data
+    ) private view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(block.chainid, address(this), _seed, _target, _data)
+            );
     }
 
-    function getTxId(uint128 _seed, address _target, bytes calldata _data) public view override returns (bytes32) {
+    function getTxId(
+        uint128 _seed,
+        address _target,
+        bytes calldata _data
+    ) public view override returns (bytes32) {
         return _getTxId(_seed, _target, _data);
     }
 
-    function getWalletConfig(address _target) external view override returns (WalletConfig memory) {
+    function getWalletConfig(
+        address _target
+    ) external view override returns (WalletConfig memory) {
         return walletConfigs[_target];
     }
 
-    function queue(address _target, bytes calldata _data) external virtual override returns (bytes32 txId) {
+    function queue(
+        address _target,
+        bytes calldata _data
+    ) external virtual override returns (bytes32 txId) {
         _authorized(_target);
         WalletConfig memory walletConfig = walletConfigs[_target];
         txId = _getTxId(walletConfig.seed, _target, _data);
@@ -88,7 +107,11 @@ abstract contract BaseSecurityControlModule is IBaseSecurityControlModule, BaseM
         emit CancelAll(target, _sender);
     }
 
-    function _preExecute(address _target, bytes calldata _data, bytes32 _txId) internal virtual {
+    function _preExecute(
+        address _target,
+        bytes calldata _data,
+        bytes32 _txId
+    ) internal virtual {
         (_target, _data);
         Tx memory _tx = queued[_txId];
         uint256 validAfter = _tx.validAfter;
@@ -101,7 +124,10 @@ abstract contract BaseSecurityControlModule is IBaseSecurityControlModule, BaseM
         queued[_txId] = Tx(address(0), 0);
     }
 
-    function execute(address _target, bytes calldata _data) external virtual override {
+    function execute(
+        address _target,
+        bytes calldata _data
+    ) external virtual override {
         _authorized(_target);
         WalletConfig memory walletConfig = walletConfigs[_target];
         bytes32 txId = _getTxId(walletConfig.seed, _target, _data);

@@ -32,7 +32,7 @@ library NetWorkLib {
             return Network.Ropsten;
         } else if (block.chainid == 4) {
             return Network.Rinkeby;
-        } else if (block.chainid == 5) {
+        } else if (block.chainid == 80001) {
             return Network.Goerli;
         } else if (block.chainid == 42) {
             return Network.Kovan;

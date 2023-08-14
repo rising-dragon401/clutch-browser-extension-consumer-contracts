@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
-import "@source/SoulWalletFactory.sol";
+import "@source/ClutchWalletFactory.sol";
 import "@source/ClutchWallet.sol";
 import "@source/trustedContractManager/trustedModuleManager/TrustedModuleManager.sol";
 import "@source/trustedContractManager/trustedPluginManager/TrustedPluginManager.sol";
@@ -47,19 +47,19 @@ contract WalletDeployer is Script, DeployHelper {
 
     function delpoy() private {
         address clutchwalletInstance = deploy(
-            "SoulwalletInstance",
+            "ClutchwalletInstance",
             bytes.concat(
                 type(ClutchWallet).creationCode,
                 abi.encode(ENTRYPOINT_ADDRESS)
             )
         );
         address clutchwalletFactoryOwner = vm.envAddress(
-            "SOULWALLET_FACTORY_OWNER"
+            "CLUTCHWALLET_FACTORY_OWNER"
         );
         address clutchwalletFactoryAddress = deploy(
-            "SoulwalletFactory",
+            "ClutchwalletFactory",
             bytes.concat(
-                type(SoulWalletFactory).creationCode,
+                type(ClutchWalletFactory).creationCode,
                 abi.encode(
                     clutchwalletInstance,
                     ENTRYPOINT_ADDRESS,
@@ -68,7 +68,7 @@ contract WalletDeployer is Script, DeployHelper {
             )
         );
         writeAddressToEnv(
-            "SOULWALLET_FACTORY_ADDRESS",
+            "CLUTCHWALLET_FACTORY_ADDRESS",
             clutchwalletFactoryAddress
         );
         address managerAddress = vm.envAddress("MANAGER_ADDRESS");

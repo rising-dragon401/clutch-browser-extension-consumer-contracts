@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "../base/SoulWalletInstence.sol";
+import "../base/ClutchWalletInstence.sol";
 import "../Bundler.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@source/dev/Tokens/TokenERC20.sol";
@@ -13,8 +13,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract DailylimitTest is Test {
     using ECDSA for bytes32;
 
-    SoulWalletInstence public clutchWalletInstence;
-    ISoulWallet public clutchWallet;
+    ClutchWalletInstence public clutchWalletInstence;
+    IClutchWallet public clutchWallet;
     address public walletOwner;
     uint256 public walletOwnerPrivateKey;
     Bundler public bundler;
@@ -59,7 +59,7 @@ contract DailylimitTest is Test {
 
         // vm.expectEmit(true, true, true, true); //   (bool checkTopic1, bool checkTopic2, bool checkTopic3, bool checkData).
         // emit DailyLimitChanged(tokens, tokenDailyLimit);
-        clutchWalletInstence = new SoulWalletInstence(
+        clutchWalletInstence = new ClutchWalletInstence(
             address(0),
             walletOwner,
             modules,

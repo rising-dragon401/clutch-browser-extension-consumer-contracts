@@ -7,7 +7,7 @@ import "@source/modules/SecurityControlModule/SecurityControlModule.sol";
 import "@source/trustedContractManager/trustedModuleManager/TrustedModuleManager.sol";
 import "@source/trustedContractManager/trustedPluginManager/TrustedPluginManager.sol";
 
-contract SoulWalletLogicInstence {
+contract ClutchWalletLogicInstence {
     ClutchWallet public clutchWalletLogic;
 
     constructor(EntryPoint _entryPoint) {

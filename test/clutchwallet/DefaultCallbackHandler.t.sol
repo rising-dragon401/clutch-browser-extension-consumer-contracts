@@ -2,14 +2,14 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "./base/SoulWalletInstence.sol";
+import "./base/ClutchWalletInstence.sol";
 import "@source/handler/DefaultCallbackHandler.sol";
 import "@source/dev/Tokens/TokenERC721.sol";
 
 contract DefaultCallbackHandlerTest is Test {
-    SoulWalletInstence public clutchWalletInstence;
+    ClutchWalletInstence public clutchWalletInstence;
     DefaultCallbackHandler public defaultCallbackHandler;
-    ISoulWallet public clutchWallet;
+    IClutchWallet public clutchWallet;
     TokenERC721 tokenERC721;
 
     function setUp() public {
@@ -18,7 +18,7 @@ contract DefaultCallbackHandlerTest is Test {
         bytes[] memory plugins = new bytes[](0);
         bytes32 salt = bytes32(0);
         defaultCallbackHandler = new DefaultCallbackHandler();
-        clutchWalletInstence = new SoulWalletInstence(
+        clutchWalletInstence = new ClutchWalletInstence(
             address(defaultCallbackHandler),
             ownerAddr,
             modules,

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "../interfaces/IModule.sol";
-import "../interfaces/ISoulWallet.sol";
+import "../interfaces/IClutchWallet.sol";
 import "../interfaces/IModuleManager.sol";
 
 abstract contract BaseModule is IModule {
@@ -22,7 +22,7 @@ abstract contract BaseModule is IModule {
     function walletInit(bytes calldata data) external {
         address _sender = sender();
         if (!inited(_sender)) {
-            if (!ISoulWallet(_sender).isAuthorizedModule(address(this))) {
+            if (!IClutchWallet(_sender).isAuthorizedModule(address(this))) {
                 revert("not authorized module");
             }
             _init(data);
@@ -33,7 +33,7 @@ abstract contract BaseModule is IModule {
     function walletDeInit() external {
         address _sender = sender();
         if (inited(_sender)) {
-            if (ISoulWallet(_sender).isAuthorizedModule(address(this))) {
+            if (IClutchWallet(_sender).isAuthorizedModule(address(this))) {
                 revert("authorized module");
             }
             _deInit();
@@ -41,7 +41,9 @@ abstract contract BaseModule is IModule {
         }
     }
 
-    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external pure override returns (bool) {
         return interfaceId == type(IModule).interfaceId;
     }
 }

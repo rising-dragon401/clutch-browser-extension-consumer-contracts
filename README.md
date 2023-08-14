@@ -17,13 +17,13 @@
 
 Below is a brief overview of the repository contracts
 
-### SoulWalletFactory
+### ClutchWalletFactory
 
-"SoulWalletFactory" is a factory contract. It is used to create a new wallet contract. The wallet contract is created using the singleton contract with the CREATE2 opcode, which allows the wallet contract to be created with a deterministic address.
+"ClutchWalletFactory" is a factory contract. It is used to create a new wallet contract. The wallet contract is created using the singleton contract with the CREATE2 opcode, which allows the wallet contract to be created with a deterministic address.
 
-### SoulWalletProxy
+### ClutchWalletProxy
 
-"SoulWalletProxy" is a proxy contract that manages the implementation contract address and is responsible for forwarding delegate calls to the implementation contract. Additionally, users' contract wallet data is stored in the proxy contract.
+"ClutchWalletProxy" is a proxy contract that manages the implementation contract address and is responsible for forwarding delegate calls to the implementation contract. Additionally, users' contract wallet data is stored in the proxy contract.
 
 ### ClutchWallet
 

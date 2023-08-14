@@ -6,7 +6,7 @@ import "@source/modules/keystore/OptimismKeyStoreProofModule/OpKnownStateRootWit
 import "@source/modules/keystore/KeystoreProof.sol";
 import "@source/modules/keystore/OptimismKeyStoreProofModule/IL1Block.sol";
 import "@source/modules/keystore/KeyStoreModule.sol";
-import "../../base/SoulWalletInstence.sol";
+import "../../base/ClutchWalletInstence.sol";
 import "./MockKeyStoreData.sol";
 import "@source/libraries/KeyStoreSlotLib.sol";
 
@@ -26,8 +26,8 @@ contract OptimismKeyStoreModuleTest is Test, MockKeyStoreData {
     OpKnownStateRootWithHistory knownStateRootWithHistory;
     MockL1Block mockL1Block;
     KeystoreProof keystoreProofContract;
-    SoulWalletInstence public clutchWalletInstence;
-    ISoulWallet public clutchWallet;
+    ClutchWalletInstence public clutchWalletInstence;
+    IClutchWallet public clutchWallet;
     KeyStoreModule optimismKeyStoreModule;
 
     address public walletOwner;
@@ -78,7 +78,7 @@ contract OptimismKeyStoreModuleTest is Test, MockKeyStoreData {
         );
         bytes32 salt = bytes32(0);
         bytes[] memory plugins = new bytes[](0);
-        clutchWalletInstence = new SoulWalletInstence(
+        clutchWalletInstence = new ClutchWalletInstence(
             address(0),
             walletOwner,
             modules,
